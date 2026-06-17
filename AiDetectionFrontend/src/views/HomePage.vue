@@ -78,6 +78,21 @@
         </div>
 
         <div class="home-page__controls">
+          <div class="mode-switch depth-switch">
+            <button
+              v-for="item in depthModes"
+              :key="item.id"
+              class="mode-switch__button"
+              :class="{ 'mode-switch__button--active': depth === item.id }"
+              type="button"
+              :title="item.hint"
+              @click="depth = item.id"
+            >
+              <VIcon :name="item.icon" :size="14" />
+              {{ item.label }}
+            </button>
+          </div>
+
           <div class="home-page__options">
             <label class="option-check">
               <input v-model="checkAI" type="checkbox" class="option-check__input" />
@@ -117,6 +132,7 @@
         <ResultsView
           v-else-if="hasResult"
           :detection="result"
+          :detailed="resultDetailed"
           @goto-detail="gotoDetail"
           @goto-plagiarism="gotoPlagiarism"
         />
@@ -137,6 +153,7 @@ import { aiDetectionAPI } from '../services/api'
 import type { AnalyzeResponse } from '../types/api'
 
 type ModeId = 'text' | 'file'
+type DepthId = 'quick' | 'extended'
 
 interface ModeOption {
   id: ModeId
@@ -144,15 +161,24 @@ interface ModeOption {
   icon: string
 }
 
+interface DepthOption {
+  id: DepthId
+  label: string
+  icon: string
+  hint: string
+}
+
 const router = useRouter()
 
 const breadcrumbs = [{ label: 'Анализ текста' }]
 const mode = ref<ModeId>('text')
+const depth = ref<DepthId>('extended')
 const text = ref('')
 const uploadedFile = ref<File | null>(null)
 const analyzing = ref(false)
 const hasResult = ref(false)
 const result = ref<AnalyzeResponse | null>(null)
+const resultDetailed = ref(true)
 const errorMsg = ref('')
 const checkAI = ref(true)
 const checkPlagiarism = ref(true)
@@ -161,6 +187,11 @@ const lang = ref('ru')
 const modes: ModeOption[] = [
   { id: 'text', label: 'Ввести текст', icon: 'sparkle' },
   { id: 'file', label: 'Загрузить файл', icon: 'upload' },
+]
+
+const depthModes: DepthOption[] = [
+  { id: 'quick', label: 'Быстрая', icon: 'zap', hint: 'Общий результат и процент вероятности ИИ' },
+  { id: 'extended', label: 'Расширенная', icon: 'layers', hint: 'Подробный разбор с подсветкой ИИ-фрагментов' },
 ]
 
 const sampleText = `Предметной областью дипломной работы является процесс выявления и развития талантов детей с использованием веб-ориентированной информационной системы в условиях развивающихся стран. В центре данной предметной области находятся дети, их способности, результаты занятий, участие в секциях, а также взаимодействие между взрослыми участниками процесса.
@@ -203,12 +234,15 @@ const runAnalysis = async () => {
   analyzing.value = true
   hasResult.value = false
 
+  const detailed = depth.value === 'extended'
+
   try {
     if (mode.value === 'text') {
-      result.value = await aiDetectionAPI.analyzeText(text.value, true)
+      result.value = await aiDetectionAPI.analyzeText(text.value, detailed)
     } else {
-      result.value = await aiDetectionAPI.uploadFile(uploadedFile.value as File, true)
+      result.value = await aiDetectionAPI.uploadFile(uploadedFile.value as File, detailed)
     }
+    resultDetailed.value = detailed
     hasResult.value = true
   } catch (error: unknown) {
     const apiError = error as { error?: string } | null
@@ -407,6 +441,10 @@ const gotoPlagiarism = () => {
   flex-direction: column;
   gap: 10px;
   padding-bottom: 24px;
+}
+
+.depth-switch {
+  margin-bottom: 2px;
 }
 
 .home-page__options {
