@@ -1,6 +1,6 @@
 <div align="center">
 
-# AI Detection KemSU
+# AI Detection
 
 **Сервис детекции ИИ-сгенерированного текста и проверки на плагиат**
 
