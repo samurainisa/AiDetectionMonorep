@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Detection API - Тестовый интерфейс</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"], input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .loading.show {
+            display: block;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+        }
+        .tab-content {
+            display: none;
+            border: 1px solid #ddd;
+            border-radius: 0 5px 5px 5px;
+            padding: 20px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 AI Detection API - Тестовый интерфейс</h1>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('upload')">📁 Загрузка файла</div>
+            <div class="tab" onclick="showTab('text')">📝 Анализ текста</div>
+            <div class="tab" onclick="showTab('batch')">📚 Пакетный анализ</div>
+            <div class="tab" onclick="showTab('history')">📊 История</div>
+        </div>
+
+        <!-- Загрузка файла -->
+        <div id="upload" class="tab-content active">
+            <h2>Загрузка и анализ файла</h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="fileInput">Выберите файл (PDF, DOCX, DOC, TXT):</label>
+                    <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" required>
+                </div>
+                <button type="submit">🔍 Анализировать файл</button>
+            </form>
+        </div>
+
+        <!-- Анализ текста -->
+        <div id="text" class="tab-content">
+            <h2>Анализ текста</h2>
+            <form id="textForm">
+                <div class="form-group">
+                    <label for="textInput">Введите текст для анализа:</label>
+                    <textarea id="textInput" placeholder="Введите текст для анализа на AI..." required></textarea>
+                </div>
+                <button type="submit">🔍 Анализировать текст</button>
+            </form>
+        </div>
+
+        <!-- Пакетный анализ -->
+        <div id="batch" class="tab-content">
+            <h2>Пакетный анализ текстов</h2>
+            <form id="batchForm">
+                <div class="form-group">
+                    <label for="batchInput">Введите тексты (каждый с новой строки):</label>
+                    <textarea id="batchInput" placeholder="Первый текст...&#10;Второй текст...&#10;Третий текст..." rows="8" required></textarea>
+                </div>
+                <button type="submit">🔍 Анализировать пакет</button>
+            </form>
+        </div>
+
+        <!-- История -->
+        <div id="history" class="tab-content">
+            <h2>История проверок</h2>
+            <div class="form-group">
+                <label for="pageInput">Страница:</label>
+                <input type="number" id="pageInput" value="1" min="1">
+                <label for="perPageInput">Записей на страницу:</label>
+                <input type="number" id="perPageInput" value="10" min="1" max="100">
+            </div>
+            <button onclick="loadHistory()">📊 Загрузить историю</button>
+            <button onclick="loadStats()">📈 Загрузить статистику</button>
+        </div>
+
+        <div class="loading" id="loading">
+            ⏳ Обработка запроса...
+        </div>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = '';  // Поскольку файл будет обслуживаться с того же сервера
+
+        function showTab(tabName) {
+            // Скрыть все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Показать выбранную вкладку
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        function showResult(data, isError = false) {
+            hideLoading();
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Загрузка файла
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading();
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('fileInput');
+
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                showResult(data, !response.ok);
+            } catch (error) {
+                showResult({error: `Ошибка сети: ${error.message}`}, true);
+            }
+        });
+
+        // Анализ текста
+        document.getElementById('textForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading();
+
+            const text = document.getElementById('textInput').value;
+
+            try {
+                const response = await fetch('/analyze-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text
+                    })
+                });
+
+                const data = await response.json();
+                showResult(data, !response.ok);
+            } catch (error) {
+                showResult({error: `Ошибка сети: ${error.message}`}, true);
+            }
+        });
+
+        // Пакетный анализ
+        document.getElementById('batchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading();
+
+            const batchInput = document.getElementById('batchInput').value;
+            const texts = batchInput.split('\n').filter(text => text.trim().length > 0);
+
+            if (texts.length === 0) {
+                showResult({error: 'Необходимо ввести хотя бы один текст'}, true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/analyze-batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        texts: texts
+                    })
+                });
+
+                const data = await response.json();
+                showResult(data, !response.ok);
+            } catch (error) {
+                showResult({error: `Ошибка сети: ${error.message}`}, true);
+            }
+        });
+
+        // Загрузка истории
+        async function loadHistory() {
+            showLoading();
+
+            const page = document.getElementById('pageInput').value;
+            const perPage = document.getElementById('perPageInput').value;
+
+            try {
+                const response = await fetch(`/history?page=${page}&per_page=${perPage}`);
+                const data = await response.json();
+                showResult(data, !response.ok);
+            } catch (error) {
+                showResult({error: `Ошибка сети: ${error.message}`}, true);
+            }
+        }
+
+        // Загрузка статистики
+        async function loadStats() {
+            showLoading();
+
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+                showResult(data, !response.ok);
+            } catch (error) {
+                showResult({error: `Ошибка сети: ${error.message}`}, true);
+            }
+        }
+
+        // Загрузка информации об API при старте
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/');
+                const data = await response.json();
+                console.log('API Info:', data);
+            } catch (error) {
+                console.error('Ошибка при получении информации об API:', error);
+            }
+        });
+    </script>
+</body>
+</html> 
