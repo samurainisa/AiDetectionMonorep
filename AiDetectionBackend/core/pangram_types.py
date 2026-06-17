@@ -16,6 +16,7 @@ class PangramV3Window(TypedDict, total=False):
     end_index: int
     word_count: int
     token_length: int
+    llm_prediction: dict[str, float]
 
 
 class PangramV3Response(TypedDict, total=False):
@@ -32,6 +33,12 @@ class PangramV3Response(TypedDict, total=False):
     num_human_segments: int
     dashboard_link: str
     windows: list[PangramV3Window]
+    llm_prediction: dict[str, float]
+    request_id: str
+    llm_prediction_ai_likelihood: float
+    llm_prediction_label: str
+    llm_prediction_request_id: str
+    llm_prediction_source: str
 
 
 class PangramNormalizedWindow(TypedDict, total=False):
@@ -45,6 +52,7 @@ class PangramNormalizedWindow(TypedDict, total=False):
     end_index: int
     word_count: int
     token_length: int
+    llm_prediction: dict[str, float]
 
 
 class PangramNormalizedResponse(TypedDict, total=False):
@@ -65,3 +73,8 @@ class PangramNormalizedResponse(TypedDict, total=False):
     max_ai_likelihood: float
     avg_ai_likelihood: float
     fraction_ai_content: float
+    llm_prediction: dict[str, float]
+    llm_prediction_ai_likelihood: float
+    llm_prediction_label: str
+    llm_prediction_request_id: str
+    llm_prediction_source: str

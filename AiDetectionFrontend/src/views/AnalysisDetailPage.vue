@@ -123,21 +123,12 @@
                 <div class="result-card__metrics">
                   <MetricBar label="ИИ" :value="aiProb" color="var(--ai)" />
                   <MetricBar label="Человек" :value="humanProb" color="var(--human)" />
+                  <MetricBar label="Неопр." :value="uncertainProb" color="var(--mixed)" />
                 </div>
               </div>
             </div>
 
-            <div
-              v-if="det.full_response?.llm_prediction && Object.keys(det.full_response.llm_prediction).length"
-              class="va-card llm-card"
-            >
-              <div class="panel-caption panel-caption--normal">Предсказания моделей</div>
-
-              <div v-for="(score, model) in det.full_response.llm_prediction" :key="model" class="llm-row">
-                <span class="llm-row__model">{{ model }}</span>
-                <span class="tnum llm-row__value">{{ Math.round((score as number) * 100) }}%</span>
-              </div>
-            </div>
+            <LlmPredictionCard :prediction="det.full_response?.llm_prediction" />
           </div>
 
           <template v-if="tab === 'details'">
@@ -243,6 +234,7 @@ import VIcon from '../components/VIcon.vue'
 import VerdictBadge from '../components/VerdictBadge.vue'
 import DonutChart from '../components/DonutChart.vue'
 import MetricBar from '../components/MetricBar.vue'
+import LlmPredictionCard from '../components/LlmPredictionCard.vue'
 import MobileAnalysisTextPanel from '../components/analysis/MobileAnalysisTextPanel.vue'
 import { aiDetectionAPI } from '../services/api'
 import type { DetectionDetail, WindowData } from '../types/api'
@@ -442,7 +434,6 @@ onMounted(async () => {
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 4px;
-  overflow-x: auto;
 }
 
 .analysis-tab {
@@ -664,31 +655,6 @@ onMounted(async () => {
   gap: 12px;
 }
 
-.llm-card {
-  padding: 16px;
-}
-
-.llm-row {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.llm-row:last-child {
-  margin-bottom: 0;
-}
-
-.llm-row__model {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.llm-row__value {
-  font-size: 12px;
-  font-weight: 500;
-}
-
 .side-toolbar {
   align-items: center;
   border-bottom: 1px solid var(--border);
@@ -798,6 +764,12 @@ onMounted(async () => {
 .feature-row__value {
   color: var(--ink);
   font-weight: 500;
+  max-width: 58%;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .graph-empty {

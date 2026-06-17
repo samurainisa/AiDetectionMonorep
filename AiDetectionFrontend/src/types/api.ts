@@ -51,6 +51,10 @@ export interface PangramResponse {
 
   windows?: WindowData[]
   llm_prediction?: Record<string, number>
+  llm_prediction_ai_likelihood?: number
+  llm_prediction_label?: string
+  llm_prediction_request_id?: string
+  llm_prediction_source?: string
 }
 
 // Main analysis responses

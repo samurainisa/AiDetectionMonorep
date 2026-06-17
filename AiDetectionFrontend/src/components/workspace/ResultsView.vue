@@ -32,6 +32,8 @@
       </div>
     </section>
 
+    <LlmPredictionCard :prediction="response?.llm_prediction" />
+
     <section v-if="detailed" class="va-card segment-card">
       <header class="section-header segment-card__header">
         <div class="section-header__left">
@@ -124,6 +126,7 @@ import VIcon from '../VIcon.vue'
 import VerdictBadge from '../VerdictBadge.vue'
 import DonutChart from '../DonutChart.vue'
 import MetricBar from '../MetricBar.vue'
+import LlmPredictionCard from '../LlmPredictionCard.vue'
 import {
   localizePredictionText,
   resolveAiDistribution,

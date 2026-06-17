@@ -25,6 +25,7 @@ load_dotenv()
 
 LOGGER = logging.getLogger(__name__)
 TEXT_API_BASE_URL = "https://text.api.pangram.com"
+MODEL_ATTRIBUTION_API_BASE_URL = "https://text.api.pangramlabs.com"
 HTTP_TIMEOUT_SECONDS = 30
 
 
@@ -55,6 +56,19 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _normalize_llm_prediction(value: Any) -> dict[str, float]:
+    if not isinstance(value, Mapping):
+        return {}
+
+    normalized: dict[str, float] = {}
+    for raw_model, raw_score in value.items():
+        model = str(raw_model).strip()
+        if not model:
+            continue
+        normalized[model] = _clamp_0_1(_safe_float(raw_score, 0.0))
+    return normalized
 
 
 class PangramTransport(Protocol):
@@ -126,6 +140,42 @@ class PangramRESTTransport:
 
         if not isinstance(response_json, dict):
             raise PangramClientError("Pangram REST returned invalid response format")
+
+        return cast(PangramV3Response, response_json)
+
+    def predict_model_attribution(self, text: str) -> PangramV3Response:
+        payload: dict[str, Any] = {
+            "text": text,
+            "return_ai_sentences": False,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": self._api_key,
+        }
+
+        try:
+            response = requests.post(
+                MODEL_ATTRIBUTION_API_BASE_URL,
+                headers=headers,
+                json=payload,
+                timeout=self._timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise PangramClientError(f"Pangram model attribution request failed: {exc}") from exc
+
+        if response.status_code >= 400:
+            raise PangramClientError(
+                f"Pangram model attribution request failed ({response.status_code}): "
+                f"{_extract_response_error(response)}"
+            )
+
+        try:
+            response_json = response.json()
+        except ValueError as exc:
+            raise PangramClientError("Pangram model attribution returned invalid JSON") from exc
+
+        if not isinstance(response_json, dict):
+            raise PangramClientError("Pangram model attribution returned invalid response format")
 
         return cast(PangramV3Response, response_json)
 
@@ -204,6 +254,7 @@ class PangramService:
 
     def analyze_text(self, text: str, detailed_analysis: bool = False) -> PangramNormalizedResponse:
         response = self._predict_v3(text=text, detailed_analysis=detailed_analysis)
+        self._enrich_with_model_attribution(response, text)
         return normalize_v3_response(response)
 
     def analyze_batch(self, texts: Sequence[str]) -> list[PangramNormalizedResponse]:
@@ -218,6 +269,31 @@ class PangramService:
                 raise
             LOGGER.warning("Pangram primary transport failed, fallback to REST: %s", primary_error)
             return self._fallback_transport.predict(text, public_dashboard_link=include_dashboard)
+
+    def _enrich_with_model_attribution(self, response: PangramV3Response, text: str) -> None:
+        if response.get("llm_prediction"):
+            return
+
+        try:
+            attribution = PangramRESTTransport(self._config.api_key).predict_model_attribution(text)
+        except PangramClientError as exc:
+            LOGGER.warning("Pangram model attribution unavailable: %s", exc)
+            return
+
+        llm_prediction = attribution.get("llm_prediction")
+        if llm_prediction:
+            response["llm_prediction"] = llm_prediction
+
+        for source_key, target_key in (
+            ("ai_likelihood", "llm_prediction_ai_likelihood"),
+            ("prediction", "llm_prediction_label"),
+            ("request_id", "llm_prediction_request_id"),
+        ):
+            value = attribution.get(source_key)
+            if value is not None:
+                response[target_key] = value  # type: ignore[literal-required]
+
+        response["llm_prediction_source"] = MODEL_ATTRIBUTION_API_BASE_URL  # type: ignore[literal-required]
 
 
 def normalize_v3_response(response: PangramV3Response) -> PangramNormalizedResponse:
@@ -272,6 +348,19 @@ def normalize_v3_response(response: PangramV3Response) -> PangramNormalizedRespo
     if isinstance(dashboard_link, str) and dashboard_link.strip():
         normalized["dashboard_link"] = dashboard_link
 
+    llm_prediction = _normalize_llm_prediction(response.get("llm_prediction"))
+    if llm_prediction:
+        normalized["llm_prediction"] = llm_prediction
+
+    attribution_ai_likelihood = response.get("llm_prediction_ai_likelihood")
+    if attribution_ai_likelihood is not None:
+        normalized["llm_prediction_ai_likelihood"] = _clamp_0_1(_safe_float(attribution_ai_likelihood, 0.0))
+
+    for key in ("llm_prediction_label", "llm_prediction_request_id", "llm_prediction_source"):
+        value = response.get(key)
+        if isinstance(value, str) and value.strip():
+            normalized[key] = value.strip()  # type: ignore[literal-required]
+
     return normalized
 
 
@@ -280,7 +369,7 @@ def _normalize_window(window: Mapping[str, Any]) -> PangramNormalizedWindow:
     assistance_score = _clamp_0_1(_safe_float(window.get("ai_assistance_score"), 0.0))
     ai_likelihood = _infer_window_likelihood(label=label, assistance_score=assistance_score)
 
-    return {
+    normalized: PangramNormalizedWindow = {
         "text": str(window.get("text", "")),
         "prediction": label,
         "label": label,
@@ -292,6 +381,12 @@ def _normalize_window(window: Mapping[str, Any]) -> PangramNormalizedWindow:
         "word_count": _safe_int(window.get("word_count"), 0),
         "token_length": _safe_int(window.get("token_length"), 0),
     }
+
+    llm_prediction = _normalize_llm_prediction(window.get("llm_prediction"))
+    if llm_prediction:
+        normalized["llm_prediction"] = llm_prediction
+
+    return normalized
 
 
 def _infer_window_likelihood(label: str, assistance_score: float) -> float:

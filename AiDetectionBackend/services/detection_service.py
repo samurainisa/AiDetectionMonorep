@@ -72,6 +72,7 @@ def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, 
             'fraction_ai': pangram_response.get('fraction_ai'),
             'fraction_ai_assisted': pangram_response.get('fraction_ai_assisted'),
             'fraction_human': pangram_response.get('fraction_human'),
+            'llm_prediction': pangram_response.get('llm_prediction') or {},
             'windows': pangram_response.get('windows') or [],
         },
     }
