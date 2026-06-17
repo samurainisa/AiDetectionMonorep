@@ -93,26 +93,6 @@
             </button>
           </div>
 
-          <div class="home-page__options">
-            <label class="option-check">
-              <input v-model="checkAI" type="checkbox" class="option-check__input" />
-              Проверка ИИ-генерации
-            </label>
-
-            <label class="option-check">
-              <input v-model="checkPlagiarism" type="checkbox" class="option-check__input" />
-              Проверка плагиата
-            </label>
-
-            <span class="home-page__options-spacer" />
-
-            <select v-model="lang" class="va-input lang-select">
-              <option value="ru">Язык: Русский</option>
-              <option value="en">Language: English</option>
-              <option value="auto">Авто-определение</option>
-            </select>
-          </div>
-
           <div class="home-page__actions">
             <button class="va-btn accent analyze-button" type="button" :disabled="analyzing" @click="runAnalysis">
               <span v-if="analyzing" class="va-spinner" />
@@ -180,9 +160,6 @@ const hasResult = ref(false)
 const result = ref<AnalyzeResponse | null>(null)
 const resultDetailed = ref(true)
 const errorMsg = ref('')
-const checkAI = ref(true)
-const checkPlagiarism = ref(true)
-const lang = ref('ru')
 
 const modes: ModeOption[] = [
   { id: 'text', label: 'Ввести текст', icon: 'sparkle' },
@@ -445,34 +422,6 @@ const gotoPlagiarism = () => {
 
 .depth-switch {
   margin-bottom: 2px;
-}
-
-.home-page__options {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.option-check {
-  align-items: center;
-  color: var(--ink-2);
-  display: inline-flex;
-  font-size: 13px;
-  gap: 8px;
-}
-
-.option-check__input {
-  accent-color: var(--accent);
-}
-
-.home-page__options-spacer {
-  flex: 1;
-}
-
-.lang-select {
-  font-size: 12px;
-  height: 32px;
 }
 
 .home-page__actions {

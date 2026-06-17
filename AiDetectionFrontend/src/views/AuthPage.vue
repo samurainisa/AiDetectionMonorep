@@ -71,7 +71,7 @@
           <FormField label="Почта">
             <input class="va-input" v-model="form.email" type="email" placeholder="anna@school.ru" style="width:100%;height:42px" required />
           </FormField>
-          <FormField label="Пароль" :hint="tab==='login' ? 'Забыли?' : ''">
+          <FormField label="Пароль">
             <input class="va-input" v-model="form.password" type="password" placeholder="••••••••" style="width:100%;height:42px" required minlength="6" />
           </FormField>
           <template v-if="tab==='register'">

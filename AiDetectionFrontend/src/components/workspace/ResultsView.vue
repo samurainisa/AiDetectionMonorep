@@ -7,13 +7,9 @@
           <VerdictBadge :verdict="verdict" />
         </div>
         <div class="section-header__right">
-          <button class="va-btn ghost action-btn action-btn--sm" type="button">
-            <VIcon name="download" :size="13" />
-            Экспорт
-          </button>
-          <button class="va-btn ghost action-btn action-btn--sm" type="button">
-            <VIcon name="copy" :size="13" />
-            Копировать
+          <button class="va-btn ghost action-btn action-btn--sm" type="button" @click="copyResult">
+            <VIcon :name="copied ? 'check' : 'copy'" :size="13" />
+            {{ copied ? 'Скопировано' : 'Копировать' }}
           </button>
         </div>
       </header>
@@ -176,6 +172,26 @@ const verdictDescription = computed(
     response.value?.prediction ||
     'Мы выделили фрагменты с высокой вероятностью ИИ, пройдитесь по тексту и оцените их вручную.',
 )
+
+const copied = ref(false)
+const copyResult = async () => {
+  const summary = [
+    `Вердикт: ${verdictText.value}`,
+    `Вероятность ИИ: ${Math.round(aiProb.value * 100)}%`,
+    `Человек: ${Math.round(humanProb.value * 100)}%`,
+    `Неопределённо: ${Math.round(uncertainProb.value * 100)}%`,
+  ]
+  if (plagiarism.value) {
+    summary.push(`Плагиат: ${plagiarismPct.value}%`)
+  }
+  try {
+    await navigator.clipboard.writeText(summary.join('\n'))
+    copied.value = true
+    setTimeout(() => (copied.value = false), 1500)
+  } catch {
+    // Clipboard API недоступен (нет https / разрешения) — тихо игнорируем
+  }
+}
 
 const probBucket = (value?: number) => Math.min(4, Math.floor((value || 0) * 5))
 const segCls = (windowItem: WindowData) => segmentVerdictClass(windowItem)
