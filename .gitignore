@@ -1,0 +1,75 @@
+# ===== Секреты и окружение =====
+.env
+.env.*
+!.env.example
+!.env.prod.example
+!.env.docker.example
+# Фронтенд: эти файлы без секретов, нужны для сборки
+!.env.production
+!.env.development
+*.pem
+*.key
+
+# ===== Python (бэкенд) =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# БД и инстанс
+instance/
+*.sqlite3
+*.db
+
+# Загрузки и временные данные
+AiDetectionKemsu/AiDetectionBackend/uploads/
+AiDetectionKemsu/AiDetectionBackend/exports/
+*.log
+
+# Датасеты и артефакты обучения (большие)
+AiDetectionKemsu/AiDetectionBackend/datasets/
+AiDetectionKemsu/AiDetectionBackend/training/
+AiDetectionKemsu/AiDetectionBackend/models/*.bin
+AiDetectionKemsu/AiDetectionBackend/models/*.pt
+AiDetectionKemsu/AiDetectionBackend/models/*.safetensors
+
+# ===== Node / фронтенд =====
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Caddy / Docker рантайм =====
+caddy_data/
+caddy_config/
+
+# ===== IDE / ОС / ассистент =====
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.claude/
+CLAUDE.md
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.DS_Store
+Thumbs.db
+
+# ===== Прочее (артефакты репозитория) =====
+*.zip
+*.docx
+~$*

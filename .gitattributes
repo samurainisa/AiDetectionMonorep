@@ -1,0 +1,27 @@
+# Нормализация окончаний строк: в репозитории всегда LF
+* text=auto eol=lf
+
+# Скрипты под конкретные ОС
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Гарантированно бинарные файлы (без diff/нормализации)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.svg  text
+*.pdf  binary
+*.zip  binary
+*.docx binary
+*.ttf  binary
+*.otf  binary
+*.woff  binary
+*.woff2 binary
+
+# Не считать сборки/лок-файлы за «код» в diff и статистике языков
+package-lock.json -diff linguist-generated
+dist/**           linguist-generated
