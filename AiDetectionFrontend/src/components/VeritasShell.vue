@@ -2,7 +2,6 @@
   <div class="veritas-shell">
     <aside class="shell-sidebar">
       <div class="brand">
-        <div class="brand__mark">AI</div>
         <div class="brand__text">
           <span class="brand__title">AI-DETECTION</span>
         </div>

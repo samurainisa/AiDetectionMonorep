@@ -99,7 +99,6 @@
             <VIcon name="file" :size="14" class="doc-cell__icon" />
             <div class="doc-cell__content">
               <p class="doc-cell__title">{{ displayFilename(item.filename, item.file_type) }}</p>
-              <p class="doc-cell__meta">{{ item.api_endpoint || 'api' }}</p>
             </div>
           </div>
 
@@ -497,12 +496,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.doc-cell__meta {
-  color: var(--muted);
-  font-size: 11px;
-  margin: 0;
 }
 
 .file-type-chip {
