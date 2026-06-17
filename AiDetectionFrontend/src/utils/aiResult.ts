@@ -56,6 +56,7 @@ export const localizePredictionText = (value?: string): string => {
   const normalized = normalizeText(source)
 
   const headlineTranslations: Record<string, string> = {
+    'mostly human, ai detected': 'В основном человек, обнаружен ИИ',
     'human written': 'Написано человеком',
     'human-written': 'Написано человеком',
     human: 'Написано человеком',
@@ -68,6 +69,18 @@ export const localizePredictionText = (value?: string): string => {
   }
 
   if (headlineTranslations[normalized]) return headlineTranslations[normalized]
+
+  if (
+    normalized.includes('primarily human-written') &&
+    normalized.includes('ai-generated') &&
+    normalized.includes('ai-assisted')
+  ) {
+    return 'Похоже, документ в основном написан человеком, но найдены ИИ-сгенерированные и ИИ-ассистированные фрагменты.'
+  }
+
+  if (normalized.includes('mostly human') && normalized.includes('ai detected')) {
+    return 'В основном человек, обнаружен ИИ'
+  }
 
   for (const item of predictionTranslations) {
     if (normalized === item.match) return item.ru
