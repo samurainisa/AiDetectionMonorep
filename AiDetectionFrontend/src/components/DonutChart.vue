@@ -21,9 +21,13 @@
       <slot>
         <div class="donut-chart__center-content">
           <div class="tnum donut-chart__value" :style="valueStyle">
-            {{ Math.round(ai * 100) }}%
+            {{ aiPercent }}%
           </div>
           <div class="donut-chart__label">Вероятность ИИ</div>
+          <div v-if="hasMixed" class="donut-chart__mixed">
+            <span>Смеш.</span>
+            <strong class="tnum">{{ mixedPercent }}%</strong>
+          </div>
         </div>
       </slot>
     </div>
@@ -73,6 +77,10 @@ const valueStyle = computed(() => ({
   fontSize: `${props.size * 0.26}px`,
 }))
 
+const aiPercent = computed(() => Math.round(props.ai * 100))
+const mixedPercent = computed(() => Math.round(props.uncertain * 100))
+const hasMixed = computed(() => mixedPercent.value > 0)
+
 const segments = computed<DonutSegment[]>(() => {
   const items: SegmentData[] = [
     { value: props.human, color: 'var(--human)' },
@@ -118,7 +126,7 @@ const segments = computed<DonutSegment[]>(() => {
 .donut-chart__value {
   color: var(--ink);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -129,5 +137,27 @@ const segments = computed<DonutSegment[]>(() => {
   letter-spacing: 0.1em;
   margin-top: 5px;
   text-transform: uppercase;
+}
+
+.donut-chart__mixed {
+  align-items: center;
+  color: var(--mixed-ink);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 4px;
+  justify-content: center;
+  line-height: 1.1;
+  margin-top: 5px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.donut-chart__mixed::before {
+  background: var(--mixed);
+  border-radius: 999px;
+  content: '';
+  height: 6px;
+  width: 6px;
 }
 </style>

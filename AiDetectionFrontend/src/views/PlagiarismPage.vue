@@ -260,6 +260,10 @@ onMounted(loadPage)
 
 .mobile-plagiarism-list {
   display: none;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
 }
 
 .table-head,
@@ -415,6 +419,7 @@ onMounted(loadPage)
   .mobile-plagiarism-list {
     display: grid;
     gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

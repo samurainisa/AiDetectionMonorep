@@ -70,10 +70,14 @@ const plagiarismLabel = computed(() => {
   background: var(--paper);
   border: 1px solid var(--border);
   border-radius: 14px;
+  box-sizing: border-box;
   box-shadow: var(--shadow-sm);
   color: var(--ink);
   display: grid;
   gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   padding: 14px;
   text-align: left;
   width: 100%;
@@ -84,13 +88,21 @@ const plagiarismLabel = computed(() => {
   display: flex;
   gap: 12px;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .mobile-plagiarism-card__file {
   align-items: flex-start;
   display: flex;
+  flex: 1 1 auto;
   gap: 9px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.mobile-plagiarism-card__file > div {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .mobile-plagiarism-card__file svg {
@@ -113,6 +125,9 @@ const plagiarismLabel = computed(() => {
   color: var(--muted);
   font-size: 11px;
   margin: 3px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-plagiarism-card__score {
@@ -138,6 +153,7 @@ const plagiarismLabel = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }
 
 .mobile-plagiarism-card__meta span {
