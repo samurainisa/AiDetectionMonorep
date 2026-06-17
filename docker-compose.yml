@@ -17,7 +17,7 @@ services:
 
   backend:
     build:
-      context: ./AiDetectionKemsu/AiDetectionBackend
+      context: ./AiDetectionBackend
       dockerfile: Dockerfile
       args:
         INSTALL_TRAINING_DEPS: ${INSTALL_TRAINING_DEPS:-false}
@@ -36,7 +36,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./AiDetectionKemsu/AiDetectionBackend/uploads:/app/uploads
+      - ./AiDetectionBackend/uploads:/app/uploads
 
   # frontend:
   #   build:

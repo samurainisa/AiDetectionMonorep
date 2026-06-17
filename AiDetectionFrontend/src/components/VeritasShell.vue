@@ -33,8 +33,8 @@
       <div v-if="user" class="sidebar-user">
         <div class="sidebar-user__avatar">{{ userInitials }}</div>
         <div class="sidebar-user__meta">
-          <span class="sidebar-user__name">{{ user.username }}</span>
-          <span class="sidebar-user__role">{{ user.role || 'Пользователь' }}</span>
+          <span class="sidebar-user__name">{{ userName }}</span>
+          <span class="sidebar-user__role">{{ userRole }}</span>
         </div>
         <button class="va-btn ghost icon-btn icon-btn--sm" type="button" title="Выйти" @click="logout">
           <VIcon name="x" :size="13" />
@@ -75,7 +75,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import VIcon from './VIcon.vue'
-import { AuthService } from '../services/auth'
+import { AuthService, getUserDisplayName, getRoleDisplayName } from '../services/auth'
 
 interface BreadcrumbItem {
   label: string
@@ -96,14 +96,29 @@ defineProps<{
 
 const router = useRouter()
 
-const primaryNav: NavItem[] = [
-  { id: 'home', label: 'Анализ текста', path: '/', icon: 'sparkle' },
-  { id: 'history', label: 'История', path: '/history', icon: 'history' },
-  { id: 'batch', label: 'Пакетная загрузка', path: '/batch', icon: 'layers' },
-  { id: 'plagiarism', label: 'Плагиат', path: '/plagiarism', icon: 'shield' },
-]
-
 const user = computed(() => AuthService.getUser())
+const userName = computed(() => getUserDisplayName(user.value))
+const userRole = computed(() => (user.value ? getRoleDisplayName(user.value.role) : 'Пользователь'))
+
+// Навигация зависит от роли: студент проверяет свои работы,
+// преподаватель работает с пакетной проверкой и журналом группы.
+const primaryNav = computed<NavItem[]>(() => {
+  const role = user.value?.role
+  const isTeacherLike = role === 'teacher' || role === 'admin'
+
+  const items: NavItem[] = [
+    { id: 'home', label: 'Анализ текста', path: '/', icon: 'sparkle' },
+    { id: 'batch', label: 'Пакетная проверка', path: '/batch', icon: 'layers' },
+    { id: 'history', label: isTeacherLike ? 'Журнал проверок' : 'Мои проверки', path: '/history', icon: 'history' },
+    { id: 'plagiarism', label: 'Антиплагиат', path: '/plagiarism', icon: 'shield' },
+  ]
+
+  if (role === 'developer') {
+    items.push({ id: 'detector', label: 'Датасет', path: '/detector', icon: 'grid' })
+  }
+
+  return items
+})
 const userInitials = computed(() => {
   const currentUser = user.value
   if (!currentUser) return 'АП'

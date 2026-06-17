@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, defineComponent, h } from 'vue'
 import { useRouter } from 'vue-router'
-import { AuthService } from '../services/auth'
+import { AuthService, defaultRouteForRole } from '../services/auth'
 import VIcon from '../components/VIcon.vue'
 
 const FormField = defineComponent({
@@ -126,7 +126,9 @@ const features = [
 
 const form = reactive({ email: '', password: '', first_name: '', last_name: '', role: 'student' as 'student'|'teacher' })
 
-onMounted(() => { if (AuthService.isAuthenticated()) router.push('/') })
+onMounted(() => {
+  if (AuthService.isAuthenticated()) router.push(defaultRouteForRole(AuthService.getUser()?.role))
+})
 
 const submit = async () => {
   isLoading.value = true
@@ -137,7 +139,7 @@ const submit = async () => {
     } else {
       await AuthService.register({ email: form.email, password: form.password, first_name: form.first_name, last_name: form.last_name, role: form.role })
     }
-    router.push('/')
+    router.push(defaultRouteForRole(AuthService.getUser()?.role))
   } catch (e: any) {
     errorMsg.value = e.error || 'Ошибка. Проверьте данные.'
   } finally {

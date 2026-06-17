@@ -25,6 +25,7 @@ from utils.file_processing import allowed_file, extract_text_from_file
 from plagiarism_engine import plagiarism_engine, PlagiarismLevel
 from core.database import PlagiarismCheck
 from training_service import initialize_training_service, get_training_service
+from services.detection_service import analyze_and_store, get_optional_user_id
 
 app = Flask(__name__)
 
@@ -111,182 +112,47 @@ def index():
 def upload_file():
     """Загрузка и анализ файла"""
     try:
-        # Проверяем авторизацию (опционально)
-        user_id = None
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            try:
-                from auth import AuthService
-                token = auth_header[7:]  # Убираем 'Bearer '
-                payload = AuthService.verify_token(token)
-                user_id = payload.get('user_id')
-            except:
-                pass  # Игнорируем ошибки авторизации для обратной совместимости
-        
+        user_id = get_optional_user_id(request)
+
         if 'file' not in request.files:
             return jsonify({'error': 'Файл не найден'}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'Файл не выбран'}), 400
-        
-        # Получаем параметр детального анализа
+
         detailed_analysis = request.form.get('detailed_analysis', 'false').lower() == 'true'
-        
-        if file and allowed_file(file.filename):
-            # Сохраняем файл
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            filename = file.filename
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            
-            # Извлекаем текст
+
+        if not (file and allowed_file(file.filename)):
+            return jsonify({'error': 'Неподдерживаемый тип файла'}), 400
+
+        # Сохраняем файл и извлекаем текст
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        filename = file.filename
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        try:
             file_type = filename.rsplit('.', 1)[1].lower()
             extracted_text = extract_text_from_file(file_path, file_type)
-            
-            # Проверяем минимальную длину текста (по количеству слов, а не символов)
-            word_count = len(extracted_text.split())
-            if word_count < 3:  # ✅ Изменено: проверяем количество слов, а не символов
-                return jsonify({'error': 'Текст слишком короткий для анализа (минимум 3 слова)'}), 400
-            
-            # Сначала проверяем на плагиат - если высокая вероятность плагиата, не тратим токены Pangram
-            print(f"[DEBUG] Starting plagiarism check before Pangram API...")
-            plagiarism_report = None
-            skip_pangram = False
-            
-            try:
-                # Предварительная эвристика без записи в корпус БД (чисто логика)
-                # Ранний быстрый подсчёт на основе локального текста не выполняем — ждём окончательного detection.id
-                plagiarism_report = None
-                # Проверяем уровень плагиата (будет заполнен после финального расчёта ниже)
-                if plagiarism_report and hasattr(plagiarism_report, 'originality_percentage'):
-                    originality = plagiarism_report.originality_percentage
-                    print(f"[DEBUG] Plagiarism check: {100-originality:.1f}% similarity detected")
-                    
-                    # Если схожесть больше 80%, пропускаем Pangram API
-                    if (100 - originality) > 80:
-                        skip_pangram = True
-                        print(f"[WARN] High plagiarism detected ({100-originality:.1f}%), skipping Pangram API to save tokens")
-                        
-                        # Создаем мок-ответ для высокого плагиата
-                        pangram_response = {
-                            'ai_likelihood': 0.0,  # Считаем плагиат человеческим текстом
-                            'max_ai_likelihood': 0.0,
-                            'avg_ai_likelihood': 0.0,
-                            'prediction': 'Plagiarism detected - AI analysis skipped',
-                            'fraction_ai_content': 0.0,
-                            'skip_reason': 'high_plagiarism',
-                            'plagiarism_similarity': 100 - originality
-                        }
-                    
-            except Exception as e:
-                print(f"[WARN] Plagiarism pre-check failed: {e}")
-                # Продолжаем с Pangram API если проверка плагиата не удалась
-            
-            # Анализируем через Pangram API только если нет высокого плагиата
-            if not skip_pangram:
-                print(f"[DEBUG] Running Pangram API analysis...")
-                pangram_response = analyze_text(extracted_text, detailed_analysis=detailed_analysis)
-            else:
-                print(f"[DEBUG] Pangram API skipped due to high plagiarism")
-            
-            # Извлекаем признаки
-            text_features = feature_extractor.extract_features(extracted_text)
-            
-            # Сохраняем в БД
-            detection = save_detection_with_features(
-                filename, file_type, extracted_text, pangram_response, 
-                determine_api_endpoint(len(extracted_text.split()), detailed_analysis=detailed_analysis), text_features
-            )
-            # Привязываем владельца детекции сразу, если авторизован
-            if user_id and hasattr(detection, 'user_id') and detection.user_id is None:
-                try:
-                    detection.user_id = user_id
-                    db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"[WARN] Не удалось привязать владельца к детекции: {e}")
-            
-            # Если пользователь авторизован, создаем связь в user_detections
-            if user_id:
-                try:
-                    from core.user_database import DetectionModel
-                    user_detection = DetectionModel(
-                        user_id=user_id,
-                        original_detection_id=detection.id,
-                        is_public=False
-                    )
-                    db.session.add(user_detection)
-                    db.session.commit()
-                    print(f"[DEBUG] Created user detection link for user {user_id}")
-                except Exception as e:
-                    print(f"[WARN] Failed to create user detection link: {e}")
-                    # Не прерываем выполнение, если не удалось создать связь
-            
-            # Всегда пересчитываем плагиат для итогового detection.id и сохраняем в БД
-            try:
-                # Сначала добавим предыдущие версии файла с таким же именем в индекс
-                try:
-                    # Находим все предыдущие детекции с тем же именем, исключая текущую
-                    prev_docs = Detection.query.filter(
-                        Detection.filename == filename,
-                        Detection.id != detection.id
-                    ).order_by(Detection.created_at.desc()).limit(50).all()
-                    for pd in prev_docs:
-                        plagiarism_engine.add_document_to_corpus(pd.id, pd.filename, pd.extracted_text)
-                except Exception as _:
-                    pass
-                # Индексируем текущий и проверяем
-                plagiarism_engine.add_document_to_corpus(detection.id, filename, extracted_text)
-                plagiarism_report = plagiarism_engine.check_plagiarism(detection.id, extracted_text, filename)
-            except Exception as e:
-                print(f"[WARN] Ошибка проверки плагиата: {e}")
-            
-            # Очищаем файл
-            os.remove(file_path)
-            
-            response_data = {
-                'detection_id': detection.id,
-                'filename': detection.filename,
-                'file_type': detection.file_type,
-                'text_length': detection.text_length,
-                'api_endpoint_used': detection.api_endpoint,
-                'pangram_response': {
-                    'ai_likelihood': detection.ai_likelihood,
-                    'max_ai_likelihood': detection.max_ai_likelihood,
-                    'avg_ai_likelihood': detection.avg_ai_likelihood,
-                    'prediction': detection.prediction,
-                    'fraction_ai_content': detection.fraction_ai_content
-                }
-            }
-            
-            # Добавляем данные о плагиате и сохраняем в отдельную таблицу
-            if plagiarism_report:
-                report_dict = plagiarism_report.to_dict()
-                response_data['plagiarism_report'] = report_dict
-                try:
-                    check = PlagiarismCheck(
-                        detection_id=detection.id,
-                        user_id=user_id,
-                        filename=detection.filename,
-                        similarity_percentage=100 - report_dict.get('originality_percentage', 100.0),
-                        originality_percentage=report_dict.get('originality_percentage', 100.0),
-                        plagiarism_level=report_dict.get('plagiarism_level', 'original'),
-                        total_fragments=report_dict.get('total_fragments', 0),
-                        matched_fragments=report_dict.get('matched_fragments', 0),
-                        matches_json=json.dumps(report_dict.get('matches', []), ensure_ascii=False),
-                        similar_documents_json=json.dumps(report_dict.get('similar_documents', []), ensure_ascii=False)
-                    )
-                    db.session.add(check)
-                    db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"[WARN] Не удалось сохранить PlagiarismCheck: {e}")
-            
-            return jsonify(response_data)
-        
-        return jsonify({'error': 'Неподдерживаемый тип файла'}), 400
-        
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+        # Минимальная длина текста — по количеству слов
+        if len(extracted_text.split()) < 3:
+            return jsonify({'error': 'Текст слишком короткий для анализа (минимум 3 слова)'}), 400
+
+        response_data = analyze_and_store(
+            extracted_text,
+            filename=filename,
+            file_type=file_type,
+            detailed_analysis=detailed_analysis,
+            user_id=user_id,
+            feature_extractor=feature_extractor,
+        )
+        return jsonify(response_data)
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -294,158 +160,29 @@ def upload_file():
 def analyze_text_endpoint():
     """Анализ текста напрямую"""
     try:
-        # Проверяем авторизацию (опционально)
-        user_id = None
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            try:
-                from auth import AuthService
-                token = auth_header[7:]  # Убираем 'Bearer '
-                payload = AuthService.verify_token(token)
-                user_id = payload.get('user_id')
-            except:
-                pass  # Игнорируем ошибки авторизации для обратной совместимости
-        
+        user_id = get_optional_user_id(request)
+
         data = request.get_json()
         if not data or 'text' not in data:
             return jsonify({'error': 'Текст не предоставлен'}), 400
-        
+
         text = data['text']
         detailed_analysis = data.get('detailed_analysis', False)
-        # Проверяем минимальную длину текста (по количеству слов, а не символов)
-        word_count = len(text.split())
-        if word_count < 3:  # ✅ Изменено: проверяем количество слов, а не символов
+
+        # Минимальная длина текста — по количеству слов
+        if len(text.split()) < 3:
             return jsonify({'error': 'Текст слишком короткий для анализа (минимум 3 слова)'}), 400
-        
-        # Сначала проверяем на плагиат - если высокая вероятность плагиата, не тратим токены Pangram
-        print(f"[DEBUG] Starting plagiarism check before Pangram API...")
-        plagiarism_report = None
-        skip_pangram = False
-        
-        try:
-            plagiarism_report = None
-            # Проверяем уровень плагиата (будет заполнен после финального расчёта ниже)
-            if plagiarism_report and hasattr(plagiarism_report, 'originality_percentage'):
-                originality = plagiarism_report.originality_percentage
-                print(f"[DEBUG] Plagiarism check: {100-originality:.1f}% similarity detected")
-                
-                # Если схожесть больше 80%, пропускаем Pangram API
-                if (100 - originality) > 80:
-                    skip_pangram = True
-                    print(f"[WARN] High plagiarism detected ({100-originality:.1f}%), skipping Pangram API to save tokens")
-                    
-                    # Создаем мок-ответ для высокого плагиата
-                    pangram_response = {
-                        'ai_likelihood': 0.0,  # Считаем плагиат человеческим текстом
-                        'max_ai_likelihood': 0.0,
-                        'avg_ai_likelihood': 0.0,
-                        'prediction': 'Plagiarism detected - AI analysis skipped',
-                        'fraction_ai_content': 0.0,
-                        'skip_reason': 'high_plagiarism',
-                        'plagiarism_similarity': 100 - originality
-                    }
-                
-        except Exception as e:
-            print(f"[WARN] Plagiarism pre-check failed: {e}")
-            # Продолжаем с Pangram API если проверка плагиата не удалась
-        
-        # Анализируем через Pangram API только если нет высокого плагиата
-        if not skip_pangram:
-            print(f"[DEBUG] Running Pangram API analysis...")
-            pangram_response = analyze_text(text, detailed_analysis=detailed_analysis)
-        else:
-            print(f"[DEBUG] Pangram API skipped due to high plagiarism")
-        
-        # Извлекаем признаки
-        text_features = feature_extractor.extract_features(text)
-        
-        # Сохраняем в БД
-        detection = save_detection_with_features(
-            'direct_text_input', 'text', text, pangram_response,
-            determine_api_endpoint(len(text.split()), detailed_analysis=detailed_analysis), text_features
+
+        response_data = analyze_and_store(
+            text,
+            filename='direct_text_input',
+            file_type='text',
+            detailed_analysis=detailed_analysis,
+            user_id=user_id,
+            feature_extractor=feature_extractor,
         )
-        # Привязываем владельца детекции сразу, если авторизован
-        if user_id and hasattr(detection, 'user_id') and detection.user_id is None:
-            try:
-                detection.user_id = user_id
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                print(f"[WARN] Не удалось привязать владельца к детекции: {e}")
-        
-        # Если пользователь авторизован, создаем связь в user_detections
-        if user_id:
-            try:
-                from core.user_database import DetectionModel
-                user_detection = DetectionModel(
-                    user_id=user_id,
-                    original_detection_id=detection.id,
-                    is_public=False
-                )
-                db.session.add(user_detection)
-                db.session.commit()
-                print(f"[DEBUG] Created user detection link for user {user_id}")
-            except Exception as e:
-                print(f"[WARN] Failed to create user detection link: {e}")
-                # Не прерываем выполнение, если не удалось создать связь
-        
-        # Всегда пересчитываем плагиат для итогового detection.id и сохраняем в БД
-        try:
-            # Индексируем предыдущие детекции с тем же 'direct_text_input' (при повторных проверках)
-            try:
-                prev_docs = Detection.query.filter(
-                    Detection.filename == 'direct_text_input',
-                    Detection.id != detection.id
-                ).order_by(Detection.created_at.desc()).limit(50).all()
-                for pd in prev_docs:
-                    plagiarism_engine.add_document_to_corpus(pd.id, pd.filename, pd.extracted_text)
-            except Exception as _:
-                pass
-            plagiarism_engine.add_document_to_corpus(detection.id, 'direct_text_input', text)
-            plagiarism_report = plagiarism_engine.check_plagiarism(detection.id, text, 'direct_text_input')
-        except Exception as e:
-            print(f"[WARN] Ошибка проверки плагиата: {e}")
-        
-        response_data = {
-            'detection_id': detection.id,
-            'filename': 'direct_text_input',
-            'file_type': 'text',
-            'text_length': detection.text_length,
-            'api_endpoint_used': detection.api_endpoint,
-            'pangram_response': {
-                'ai_likelihood': detection.ai_likelihood,
-                'max_ai_likelihood': detection.max_ai_likelihood,
-                'avg_ai_likelihood': detection.avg_ai_likelihood,
-                'prediction': detection.prediction,
-                'fraction_ai_content': detection.fraction_ai_content
-            }
-        }
-        
-        # Добавляем данные о плагиате и сохраняем в отдельную таблицу
-        if plagiarism_report:
-            report_dict = plagiarism_report.to_dict()
-            response_data['plagiarism_report'] = report_dict
-            try:
-                check = PlagiarismCheck(
-                    detection_id=detection.id,
-                    user_id=user_id,
-                    filename=detection.filename,
-                    similarity_percentage=100 - report_dict.get('originality_percentage', 100.0),
-                    originality_percentage=report_dict.get('originality_percentage', 100.0),
-                    plagiarism_level=report_dict.get('plagiarism_level', 'original'),
-                    total_fragments=report_dict.get('total_fragments', 0),
-                    matched_fragments=report_dict.get('matched_fragments', 0),
-                    matches_json=json.dumps(report_dict.get('matches', []), ensure_ascii=False),
-                    similar_documents_json=json.dumps(report_dict.get('similar_documents', []), ensure_ascii=False)
-                )
-                db.session.add(check)
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                print(f"[WARN] Не удалось сохранить PlagiarismCheck: {e}")
-        
         return jsonify(response_data)
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

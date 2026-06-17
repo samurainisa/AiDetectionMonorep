@@ -36,7 +36,7 @@
       </div>
     </section>
 
-    <section class="va-card segment-card">
+    <section v-if="detailed" class="va-card segment-card">
       <header class="section-header segment-card__header">
         <div class="section-header__left">
           <span class="section-label">Посегментная разметка</span>
@@ -137,7 +137,10 @@ import {
 
 defineEmits(['goto-detail', 'goto-plagiarism'])
 
-const props = defineProps<{ detection: AnalyzeResponse | null }>()
+const props = withDefaults(
+  defineProps<{ detection: AnalyzeResponse | null; detailed?: boolean }>(),
+  { detailed: true },
+)
 
 const segMode = ref('highlight')
 const segModes = [
