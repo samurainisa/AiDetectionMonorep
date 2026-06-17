@@ -1,0 +1,17 @@
+Flask
+Flask-CORS
+Flask-SQLAlchemy
+psycopg2-binary
+python-dotenv
+requests
+pangram-sdk
+PyPDF2
+python-docx
+python-magic
+reportlab
+PyJWT
+gunicorn
+
+# runtime deps (без обучения)
+numpy
+pandas
