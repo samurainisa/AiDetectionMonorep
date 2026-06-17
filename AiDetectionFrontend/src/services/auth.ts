@@ -282,3 +282,15 @@ export const getRoleDisplayName = (role: string): string => {
   }
   return roleNames[role as keyof typeof roleNames] || role
 }
+
+// Стартовый маршрут под роль: студент — самопроверка работы,
+// преподаватель/админ — пакетная проверка студенческих работ.
+export const defaultRouteForRole = (role?: string | null): string => {
+  switch (role) {
+    case 'teacher':
+    case 'admin':
+      return '/batch'
+    default:
+      return '/'
+  }
+}
