@@ -66,6 +66,49 @@
         <slot />
       </div>
     </main>
+
+    <nav class="mobile-tabbar" aria-label="Mobile navigation">
+      <div class="mobile-tabbar__side">
+        <RouterLink
+          v-for="item in mobileLeftNav"
+          :key="item.id"
+          class="mobile-tabbar__item"
+          :class="{ 'mobile-tabbar__item--active': active === item.id }"
+          :to="item.path"
+        >
+          <VIcon :name="item.icon" :size="20" />
+          <span>{{ item.label }}</span>
+        </RouterLink>
+      </div>
+
+      <RouterLink class="mobile-tabbar__fab" to="/" aria-label="New analysis">
+        <VIcon name="plus" :size="24" />
+        <span>Новый</span>
+      </RouterLink>
+
+      <div class="mobile-tabbar__side mobile-tabbar__side--right">
+        <RouterLink
+          v-for="item in mobileRightNav"
+          :key="item.id"
+          class="mobile-tabbar__item"
+          :class="{ 'mobile-tabbar__item--active': active === item.id }"
+          :to="item.path"
+        >
+          <VIcon :name="item.icon" :size="20" />
+          <span>{{ item.label }}</span>
+        </RouterLink>
+
+        <RouterLink
+          v-if="user"
+          class="mobile-tabbar__item mobile-tabbar__profile"
+          to="/profile"
+          :title="userName"
+        >
+          <span class="mobile-tabbar__avatar">{{ userInitials }}</span>
+          <span>Профиль</span>
+        </RouterLink>
+      </div>
+    </nav>
   </div>
 </template>
 
@@ -117,6 +160,11 @@ const primaryNav = computed<NavItem[]>(() => {
 
   return items
 })
+
+const mobileNav = computed(() => primaryNav.value.filter((item) => item.id !== 'home'))
+const mobileLeftNav = computed(() => mobileNav.value.slice(0, 2))
+const mobileRightNav = computed(() => mobileNav.value.slice(2, 4))
+
 const userInitials = computed(() => {
   const currentUser = user.value
   if (!currentUser) return 'АП'
@@ -372,6 +420,11 @@ const logout = async () => {
   min-height: 0;
 }
 
+.mobile-tabbar {
+  display: none;
+}
+
+
 @media (max-width: 1080px) {
   .veritas-shell {
     grid-template-columns: 1fr;
@@ -382,6 +435,164 @@ const logout = async () => {
     border-bottom: 1px solid var(--border);
     height: auto;
     position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .veritas-shell {
+    display: block;
+    min-height: 100dvh;
+  }
+
+  .shell-sidebar {
+    display: none;
+  }
+
+  .shell-main {
+    min-height: 100dvh;
+    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .shell-topbar {
+    height: 48px;
+    padding: 0 14px;
+  }
+
+  .breadcrumbs {
+    font-size: 12px;
+    max-width: 100%;
+  }
+
+  .breadcrumbs__item {
+    max-width: 42vw;
+  }
+
+  .mobile-tabbar {
+    align-items: center;
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
+    border-top: 1px solid var(--border);
+    bottom: 0;
+    box-shadow: 0 -8px 28px rgba(31, 29, 26, 0.1);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
+    gap: 4px;
+    left: 0;
+    min-height: calc(72px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    position: fixed;
+    right: 0;
+    z-index: 40;
+  }
+
+  .mobile-tabbar__side {
+    align-items: end;
+    display: grid;
+    gap: 2px;
+    grid-auto-columns: minmax(42px, 1fr);
+    grid-auto-flow: column;
+    min-width: 0;
+  }
+
+  .mobile-tabbar__side--right {
+    grid-auto-columns: minmax(38px, 1fr);
+  }
+
+  .mobile-tabbar__item {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    gap: 3px;
+    height: 52px;
+    justify-content: center;
+    line-height: 1.05;
+    min-width: 0;
+    padding: 4px 2px;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .mobile-tabbar__item span:last-child {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-tabbar__item--active {
+    color: var(--accent-ink);
+  }
+
+  .mobile-tabbar__item--active svg {
+    color: var(--accent);
+  }
+
+  .mobile-tabbar__fab {
+    align-items: center;
+    align-self: start;
+    background: var(--accent);
+    border: 4px solid var(--bg);
+    border-radius: 22px;
+    box-shadow: 0 10px 24px rgba(232, 116, 61, 0.28);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 700;
+    gap: 1px;
+    height: 62px;
+    justify-content: center;
+    justify-self: center;
+    line-height: 1;
+    margin-top: -22px;
+    text-decoration: none;
+    width: 62px;
+  }
+
+  .mobile-tabbar__profile {
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .mobile-tabbar__avatar {
+    align-items: center;
+    background: var(--accent-bg);
+    border-radius: 999px;
+    color: var(--accent-ink);
+    display: flex;
+    font-size: 10px;
+    font-weight: 700;
+    height: 21px;
+    justify-content: center;
+    max-width: none;
+    overflow: visible;
+    width: 21px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mobile-tabbar {
+    grid-template-columns: minmax(0, 1fr) 62px minmax(0, 1fr);
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .mobile-tabbar__fab {
+    border-radius: 19px;
+    height: 56px;
+    width: 56px;
+  }
+
+  .mobile-tabbar__item {
+    font-size: 9px;
+    height: 50px;
   }
 }
 </style>

@@ -7,6 +7,7 @@ import PlagiarismPage from '../views/PlagiarismPage.vue'
 import AnalysisDetailPage from '../views/AnalysisDetailPage.vue'
 import BatchUploadPage from '../views/BatchUploadPage.vue'
 import AuthPage from '../views/AuthPage.vue'
+import ProfilePage from '../views/ProfilePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -52,6 +53,12 @@ const router = createRouter({
       path: '/plagiarism',
       name: 'plagiarism',
       component: PlagiarismPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfilePage,
       meta: { requiresAuth: true },
     },
     {
