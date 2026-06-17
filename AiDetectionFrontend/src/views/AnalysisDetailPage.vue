@@ -14,14 +14,6 @@
               <span class="tnum">{{ det.text_length?.toLocaleString('ru') }} слов</span>
             </div>
           </div>
-
-          <div class="analysis-header__actions">
-            <button class="va-btn" type="button">
-              <VIcon name="copy" :size="14" />
-              Поделиться
-            </button>
-            <button class="va-btn primary" type="button" @click="goToHome">Новый анализ</button>
-          </div>
         </div>
 
         <nav class="analysis-tabs" aria-label="Вкладки анализа">
@@ -47,6 +39,17 @@
       </div>
 
       <div v-else class="analysis-layout">
+        <MobileAnalysisTextPanel
+          :windows="windows"
+          :extracted-text="det.extracted_text"
+          :has-windows="hasWindows"
+          :seg-mode="segMode"
+          :active-index="activeSeg"
+          :modes="segModes"
+          @update:seg-mode="segMode = $event"
+          @update:active-index="activeSeg = $event"
+        />
+
         <article class="text-panel va-scroll">
           <div class="text-panel__body">
             <div v-if="hasWindows" class="text-content" :data-seg-mode="segMode">
@@ -240,8 +243,10 @@ import VIcon from '../components/VIcon.vue'
 import VerdictBadge from '../components/VerdictBadge.vue'
 import DonutChart from '../components/DonutChart.vue'
 import MetricBar from '../components/MetricBar.vue'
+import MobileAnalysisTextPanel from '../components/analysis/MobileAnalysisTextPanel.vue'
 import { aiDetectionAPI } from '../services/api'
 import type { DetectionDetail, WindowData } from '../types/api'
+import { displayDocumentName } from '../utils/display'
 import {
   formatRuDate,
   resolveAiDistribution,
@@ -290,12 +295,6 @@ const segFilters: Array<{ id: SegmentFilterId; label: string }> = [
   { id: 'human', label: 'Человек' },
 ]
 
-const displayFilename = (value?: string, fileType?: string) => {
-  if ((fileType || '').toLowerCase() === 'text') return 'Ввод текста'
-  if (!value) return ''
-  return value === 'direct_text_input' ? 'Ввод текста' : value
-}
-
 const goToHistory = () => {
   router.push('/history')
 }
@@ -305,7 +304,7 @@ const goToHome = () => {
 }
 
 const docTitle = computed(
-  () => displayFilename(det.value?.filename, det.value?.file_type) || `Анализ #${detectionId.value}`,
+  () => displayDocumentName(det.value?.filename, det.value?.file_type) || `Анализ #${detectionId.value}`,
 )
 
 const breadcrumbs = computed(() => [
@@ -857,6 +856,20 @@ onMounted(async () => {
 }
 
 @media (max-width: 720px) {
+  .analysis-detail {
+    height: auto;
+    min-height: calc(100vh - 48px);
+  }
+
+  .analysis-layout {
+    display: block;
+    padding-bottom: 0;
+  }
+
+  .text-panel {
+    display: none;
+  }
+
   .analysis-header__top {
     flex-direction: column;
     gap: 12px;

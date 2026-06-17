@@ -90,6 +90,7 @@ import VeritasShell from '../components/VeritasShell.vue'
 import VIcon from '../components/VIcon.vue'
 import { aiDetectionAPI } from '../services/api'
 import type { Detection, StatsResponse } from '../types/api'
+import { displayDocumentName } from '../utils/display'
 
 const router = useRouter()
 
@@ -121,11 +122,7 @@ const avgOriginalityDisplay = computed(() => {
 
 const hasOriginality = (item: Detection): boolean => item.plagiarism_originality != null
 
-const displayFilename = (value?: string, fileType?: string): string => {
-  if ((fileType || '').toLowerCase() === 'text') return 'Ввод текста'
-  if (!value) return 'Без имени'
-  return value === 'direct_text_input' ? 'Ввод текста' : value
-}
+const displayFilename = (value?: string, fileType?: string): string => displayDocumentName(value, fileType)
 
 const plagiarismPercent = (originality: number | undefined): number => {
   const normalizedOriginality = originality ?? 100

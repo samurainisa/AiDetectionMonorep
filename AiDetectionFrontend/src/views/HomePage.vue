@@ -344,6 +344,7 @@ const gotoPlagiarism = () => {
 
 .input-card__footer {
   align-items: center;
+  margin-top: 20px;
   border-top: 1px solid var(--border);
   color: var(--muted);
   display: flex;
@@ -490,10 +491,67 @@ const gotoPlagiarism = () => {
 }
 
 @media (max-width: 768px) {
+  .home-page {
+    min-height: auto;
+  }
+
+  .home-page__input-panel {
+    min-height: auto;
+    padding-top: 18px;
+  }
+
   .home-page__input-panel,
   .home-page__result-panel {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .home-page__heading {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 340px;
+    text-align: center;
+  }
+
+  .home-page__title {
+    font-size: 27px;
+  }
+
+  .mode-switch {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .mode-switch__button {
+    justify-content: center;
+    min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .depth-switch {
+    width: 100%;
+  }
+
+  .home-page__result-panel {
+    min-height: 0;
+    padding-bottom: 18px;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-page__input-panel,
+  .home-page__result-panel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .mode-switch__button {
+    font-size: 12px;
+    gap: 6px;
   }
 }
 </style>

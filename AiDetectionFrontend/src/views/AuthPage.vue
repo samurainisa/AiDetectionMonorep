@@ -2,10 +2,13 @@
   <main class="auth-page">
     <section class="auth-hero" aria-label="AI Detection">
       <div class="auth-brand">
-        <div class="auth-brand__mark">AI</div>
+        <div class="auth-brand__mark">
+          <VIcon name="sparkle" :size="18" />
+        </div>
         <div>
           <div class="auth-brand__title">AI Detection</div>
-          <div class="auth-brand__subtitle">Text integrity platform</div>
+          <div class="auth-brand__subtitle">Платформа проверки текстов</div>
+          <div class="auth-brand__caption">ИИ-фрагменты, плагиат и пакетная обработка</div>
         </div>
       </div>
 
@@ -96,7 +99,6 @@
               v-model="form.email"
               class="va-input"
               type="email"
-              placeholder="anna@school.ru"
               autocomplete="email"
               required
             />
@@ -108,7 +110,6 @@
               v-model="form.password"
               class="va-input"
               type="password"
-              placeholder="••••••••"
               autocomplete="current-password"
               required
               minlength="6"
@@ -276,6 +277,12 @@ const submit = async () => {
   font-size: 12px;
 }
 
+.auth-brand__caption {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
 .auth-hero__content {
   display: flex;
   flex: 1;
@@ -312,6 +319,7 @@ const submit = async () => {
 .auth-feature-list {
   display: grid;
   gap: 14px;
+  margin-bottom: 34px;
 }
 
 .auth-feature {

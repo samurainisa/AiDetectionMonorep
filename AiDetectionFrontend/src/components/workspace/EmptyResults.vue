@@ -49,4 +49,28 @@ import VIcon from '../VIcon.vue'
   margin: 0;
   max-width: 300px;
 }
+
+@media (max-width: 768px) {
+  .empty-results {
+    gap: 8px;
+    min-height: 150px;
+    padding: 18px 14px;
+  }
+
+  .empty-results__icon {
+    border-radius: 14px;
+    height: 44px;
+    width: 44px;
+  }
+
+  .empty-results__title {
+    font-size: 18px;
+  }
+
+  .empty-results__subtitle {
+    font-size: 12px;
+    line-height: 1.45;
+    max-width: 260px;
+  }
+}
 </style>

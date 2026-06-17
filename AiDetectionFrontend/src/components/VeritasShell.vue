@@ -77,13 +77,13 @@
           :to="item.path"
         >
           <VIcon :name="item.icon" :size="20" />
-          <span>{{ item.label }}</span>
+          <span>{{ item.mobileLabel || item.label }}</span>
         </RouterLink>
       </div>
 
       <RouterLink class="mobile-tabbar__fab" to="/" aria-label="New analysis">
         <VIcon name="plus" :size="24" />
-        <span>Новый</span>
+        <span>Анализ</span>
       </RouterLink>
 
       <div class="mobile-tabbar__side mobile-tabbar__side--right">
@@ -95,7 +95,7 @@
           :to="item.path"
         >
           <VIcon :name="item.icon" :size="20" />
-          <span>{{ item.label }}</span>
+          <span>{{ item.mobileLabel || item.label }}</span>
         </RouterLink>
 
         <RouterLink
@@ -128,6 +128,7 @@ interface NavItem {
   label: string
   path: string
   icon: string
+  mobileLabel?: string
 }
 
 defineProps<{
@@ -148,14 +149,14 @@ const primaryNav = computed<NavItem[]>(() => {
   const isTeacherLike = role === 'teacher' || role === 'admin'
 
   const items: NavItem[] = [
-    { id: 'home', label: 'Анализ текста', path: '/', icon: 'sparkle' },
-    { id: 'batch', label: 'Пакетная проверка', path: '/batch', icon: 'layers' },
-    { id: 'history', label: isTeacherLike ? 'Журнал проверок' : 'Мои проверки', path: '/history', icon: 'history' },
-    { id: 'plagiarism', label: 'Антиплагиат', path: '/plagiarism', icon: 'shield' },
+    { id: 'home', label: 'Анализ текста', path: '/', icon: 'sparkle', mobileLabel: 'Анализ' },
+    { id: 'batch', label: 'Пакетная проверка', path: '/batch', icon: 'layers', mobileLabel: 'Пак. обр' },
+    { id: 'history', label: isTeacherLike ? 'Журнал проверок' : 'Мои проверки', path: '/history', icon: 'history', mobileLabel: 'История' },
+    { id: 'plagiarism', label: 'Антиплагиат', path: '/plagiarism', icon: 'shield', mobileLabel: 'Плагиат' },
   ]
 
   if (role === 'developer') {
-    items.push({ id: 'detector', label: 'Датасет', path: '/detector', icon: 'grid' })
+    items.push({ id: 'detector', label: 'Датасет', path: '/detector', icon: 'grid', mobileLabel: 'Данные' })
   }
 
   return items
@@ -506,12 +507,12 @@ const logout = async () => {
     display: flex;
     flex-direction: column;
     font-family: var(--font-sans);
-    font-size: 10px;
-    font-weight: 600;
+    font-size: 10.5px;
+    font-weight: 650;
     gap: 3px;
     height: 52px;
     justify-content: center;
-    line-height: 1.05;
+    line-height: 1.08;
     min-width: 0;
     padding: 4px 2px;
     text-align: center;
@@ -520,13 +521,14 @@ const logout = async () => {
 
   .mobile-tabbar__item span:last-child {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-wrap: balance;
+    white-space: normal;
   }
 
   .mobile-tabbar__item--active {
     color: var(--accent-ink);
+    font-weight: 800;
   }
 
   .mobile-tabbar__item--active svg {
@@ -591,7 +593,7 @@ const logout = async () => {
   }
 
   .mobile-tabbar__item {
-    font-size: 9px;
+    font-size: 10px;
     height: 50px;
   }
 }

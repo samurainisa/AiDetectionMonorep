@@ -116,6 +116,7 @@ import type {
   PlagiarismReport,
   SimilarDocument,
 } from '../types/api'
+import { displayDocumentName } from '../utils/display'
 
 type Breadcrumb = { label: string; onClick?: () => void }
 
@@ -155,10 +156,7 @@ const goToNewAnalysis = () => {
   router.push('/')
 }
 
-const displayFilename = (value?: string): string => {
-  if (!value) return 'Без имени'
-  return value === 'direct_text_input' ? 'Ввод текста' : value
-}
+const displayFilename = (value?: string): string => displayDocumentName(value, undefined)
 
 const filename = computed(
   () => displayFilename(detection.value?.filename) || `Документ #${detectionId.value || '—'}`,

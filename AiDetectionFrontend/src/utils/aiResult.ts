@@ -54,6 +54,21 @@ export const localizePredictionText = (value?: string): string => {
   if (!source) return ''
 
   const normalized = normalizeText(source)
+
+  const headlineTranslations: Record<string, string> = {
+    'human written': 'Написано человеком',
+    'human-written': 'Написано человеком',
+    human: 'Написано человеком',
+    'ai generated': 'Сгенерировано ИИ',
+    'ai-generated': 'Сгенерировано ИИ',
+    'ai assisted': 'Написано с помощью ИИ',
+    'ai-assisted': 'Написано с помощью ИИ',
+    'mixed content': 'Смешанный контент',
+    mixed: 'Смешанный контент',
+  }
+
+  if (headlineTranslations[normalized]) return headlineTranslations[normalized]
+
   for (const item of predictionTranslations) {
     if (normalized === item.match) return item.ru
   }

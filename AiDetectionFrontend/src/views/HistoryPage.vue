@@ -99,7 +99,7 @@
           <div class="doc-cell">
             <VIcon name="file" :size="14" class="doc-cell__icon" />
             <div class="doc-cell__content">
-              <p class="doc-cell__title">{{ displayFilename(item.filename, item.file_type) }}</p>
+              <p class="doc-cell__title">{{ displayDocumentName(item.filename, item.file_type) }}</p>
             </div>
           </div>
 
@@ -130,6 +130,16 @@
         <p v-if="filteredItems.length === 0" class="table-state">Нет записей</p>
       </section>
 
+      <section v-if="!isLoading" class="mobile-history-list" aria-label="История анализов">
+        <MobileHistoryCard
+          v-for="item in filteredItems"
+          :key="item.id"
+          :item="item"
+          @open="goToAnalysis"
+        />
+        <p v-if="filteredItems.length === 0" class="table-state">Нет записей</p>
+      </section>
+
       <footer v-if="totalPages > 1" class="pagination">
         <button class="va-btn ghost pagination__button" type="button" :disabled="page <= 1" @click="page -= 1">
           <VIcon name="chevLeft" :size="13" />
@@ -156,8 +166,10 @@ import { useRouter } from 'vue-router'
 import VeritasShell from '../components/VeritasShell.vue'
 import VIcon from '../components/VIcon.vue'
 import VerdictBadge from '../components/VerdictBadge.vue'
+import MobileHistoryCard from '../components/history/MobileHistoryCard.vue'
 import { aiDetectionAPI } from '../services/api'
 import type { Detection, StatsResponse } from '../types/api'
+import { displayDocumentName } from '../utils/display'
 import {
   formatRuDate,
   resolveAiDistribution,
@@ -225,12 +237,6 @@ const checkModeClass = (apiEndpoint?: string) => {
   return value === 'v3_detailed' ? 'check-mode-chip--extended' : 'check-mode-chip--quick'
 }
 
-const displayFilename = (value?: string, fileType?: string) => {
-  if ((fileType || '').toLowerCase() === 'text') return 'Ввод текста'
-  if (!value) return 'Без имени'
-  return value === 'direct_text_input' ? 'Ввод текста' : value
-}
-
 const fmtDate = (value: string) => formatRuDate(value)
 
 const filteredItems = computed(() => {
@@ -243,7 +249,7 @@ const filteredItems = computed(() => {
   if (!query) return byFilter
 
   return byFilter.filter((item) => {
-    const fileName = displayFilename(item.filename, item.file_type).toLowerCase()
+    const fileName = displayDocumentName(item.filename, item.file_type).toLowerCase()
     const prediction = (item.prediction || '').toLowerCase()
     return fileName.includes(query) || prediction.includes(query)
   })
@@ -276,7 +282,7 @@ const exportCsv = () => {
   const headers = ['id', 'filename', 'file_type', 'text_length', 'ai_likelihood', 'prediction', 'created_at']
   const rows = filteredItems.value.map((item) => [
     item.id,
-    `"${displayFilename(item.filename, item.file_type).replace(/"/g, '""')}"`,
+    `"${displayDocumentName(item.filename, item.file_type).replace(/"/g, '""')}"`,
     item.file_type || '',
     item.text_length || 0,
     resolveAiDistribution(aiSource(item)).ai,
@@ -447,6 +453,10 @@ onMounted(() => {
 .table-card {
   overflow: hidden;
   padding: 0;
+}
+
+.mobile-history-list {
+  display: none;
 }
 
 .table-head,
@@ -654,12 +664,64 @@ onMounted(() => {
 }
 
 @media (max-width: 700px) {
+  .history-page {
+    padding: 14px;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
 
   .history-page__actions {
     width: 100%;
+  }
+
+  .history-page__actions .va-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .filters-row {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .filters-toggle {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .filters-toggle__button {
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .page-size-select,
+  .search-box,
+  .search-box__input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filters-row__spacer {
+    display: none;
+  }
+
+  .filters-row__count {
+    justify-self: end;
+  }
+
+  .table-card {
+    display: none;
+  }
+
+  .mobile-history-list {
+    display: grid;
+    gap: 10px;
   }
 }
 </style>
