@@ -79,6 +79,16 @@
 
         <p v-if="items.length === 0" class="table-state">Нет данных</p>
       </section>
+
+      <section v-if="!isLoading && !loadError" class="mobile-plagiarism-list" aria-label="Документы">
+        <MobilePlagiarismCard
+          v-for="item in items"
+          :key="item.id"
+          :item="item"
+          @open="goToDetail"
+        />
+        <p v-if="items.length === 0" class="table-state">Нет данных</p>
+      </section>
     </section>
   </VeritasShell>
 </template>
@@ -88,6 +98,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import VeritasShell from '../components/VeritasShell.vue'
 import VIcon from '../components/VIcon.vue'
+import MobilePlagiarismCard from '../components/plagiarism/MobilePlagiarismCard.vue'
 import { aiDetectionAPI } from '../services/api'
 import type { Detection, StatsResponse } from '../types/api'
 import { displayDocumentName } from '../utils/display'
@@ -247,6 +258,10 @@ onMounted(loadPage)
   padding: 0;
 }
 
+.mobile-plagiarism-list {
+  display: none;
+}
+
 .table-head,
 .table-row {
   display: grid;
@@ -380,6 +395,26 @@ onMounted(loadPage)
   .table-head,
   .table-row {
     min-width: 640px;
+  }
+}
+
+@media (max-width: 700px) {
+  .plagiarism-page {
+    padding: 14px;
+  }
+
+  .page-header .va-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .table-card {
+    display: none;
+  }
+
+  .mobile-plagiarism-list {
+    display: grid;
+    gap: 10px;
   }
 }
 </style>

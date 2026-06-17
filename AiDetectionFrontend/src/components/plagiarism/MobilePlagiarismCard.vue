@@ -1,0 +1,151 @@
+<template>
+  <button class="mobile-plagiarism-card" type="button" @click="$emit('open', item.id)">
+    <div class="mobile-plagiarism-card__top">
+      <div class="mobile-plagiarism-card__file">
+        <VIcon name="file" :size="15" />
+        <div>
+          <h3>{{ title }}</h3>
+          <p>{{ date }}</p>
+        </div>
+      </div>
+      <span class="mobile-plagiarism-card__score tnum" :style="{ color }">{{ plagiarism }}%</span>
+    </div>
+
+    <div class="mobile-plagiarism-card__meter">
+      <span :style="{ width: `${plagiarism}%`, backgroundColor: color }" />
+    </div>
+
+    <div class="mobile-plagiarism-card__meta">
+      <span class="tnum">{{ words }} слов</span>
+      <span>{{ plagiarismLabel }}</span>
+    </div>
+  </button>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import VIcon from '../VIcon.vue'
+import type { Detection } from '../../types/api'
+import { displayDocumentName } from '../../utils/display'
+
+const props = defineProps<{
+  item: Detection
+}>()
+
+defineEmits<{
+  open: [id: number]
+}>()
+
+const title = computed(() => displayDocumentName(props.item.filename, props.item.file_type))
+const originality = computed(() => props.item.plagiarism_originality ?? 100)
+const plagiarism = computed(() => Math.round(100 - originality.value))
+const words = computed(() => props.item.text_length?.toLocaleString('ru') || '0')
+const date = computed(() =>
+  props.item.created_at
+    ? new Date(props.item.created_at).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : 'Дата неизвестна',
+)
+
+const color = computed(() => {
+  if (plagiarism.value > 25) return 'var(--ai)'
+  if (plagiarism.value > 10) return 'var(--mixed)'
+  return 'var(--human)'
+})
+
+const plagiarismLabel = computed(() => {
+  if (plagiarism.value > 25) return 'Высокие совпадения'
+  if (plagiarism.value > 10) return 'Есть совпадения'
+  return 'Оригинальный текст'
+})
+</script>
+
+<style scoped>
+.mobile-plagiarism-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.mobile-plagiarism-card__top {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.mobile-plagiarism-card__file {
+  align-items: flex-start;
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+}
+
+.mobile-plagiarism-card__file svg {
+  color: var(--muted);
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.mobile-plagiarism-card__file h3 {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-plagiarism-card__file p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 3px 0 0;
+}
+
+.mobile-plagiarism-card__score {
+  flex: 0 0 auto;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mobile-plagiarism-card__meter {
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  height: 7px;
+  overflow: hidden;
+}
+
+.mobile-plagiarism-card__meter span {
+  display: block;
+  height: 100%;
+}
+
+.mobile-plagiarism-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mobile-plagiarism-card__meta span {
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+}
+</style>

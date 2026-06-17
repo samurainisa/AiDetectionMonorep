@@ -408,6 +408,7 @@ onMounted(async () => {
 
 .analysis-header__title-row {
   align-items: center;
+  flex-wrap: wrap;
   display: flex;
   gap: 10px;
   margin-bottom: 6px;

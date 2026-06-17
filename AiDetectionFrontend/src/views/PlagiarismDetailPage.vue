@@ -631,6 +631,17 @@ onMounted(() => {
     padding-inline: 16px;
   }
 
+  .detail-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detail-title {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
+
   .detail-actions {
     flex-wrap: wrap;
   }
