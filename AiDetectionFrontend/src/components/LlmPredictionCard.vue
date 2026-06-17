@@ -5,8 +5,23 @@
         <p class="llm-prediction-card__eyebrow">Вероятные модели</p>
         <h3 class="llm-prediction-card__title">Модельный след</h3>
       </div>
-      <span class="llm-prediction-card__top">{{ entries[0].label }}</span>
+      <span class="llm-prediction-card__top" :class="{ 'llm-prediction-card__top--muted': !hasConfidentMatch }">
+        {{ topLabel }}
+      </span>
     </header>
+
+    <div class="llm-prediction-card__options" aria-label="Опции модельного поиска">
+      <span>{{ endpointLabel }}</span>
+      <span>Все модели</span>
+      <span>Порог 0,1%</span>
+    </div>
+
+    <div v-if="label || aiLikelihood != null" class="llm-prediction-card__summary">
+      <span v-if="label">{{ label }}</span>
+      <span v-if="aiLikelihood != null" class="tnum">{{ formatScore(aiLikelihood) }} ИИ</span>
+    </div>
+
+    <p v-if="requestId" class="llm-prediction-card__request">ID запроса: {{ requestId }}</p>
 
     <div class="llm-prediction-card__list">
       <div v-for="entry in entries" :key="entry.key" class="llm-prediction-card__row">
@@ -27,6 +42,10 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   prediction?: Record<string, number>
+  label?: string
+  aiLikelihood?: number
+  source?: string
+  requestId?: string
 }>()
 
 const modelLabels: Record<string, string> = {
@@ -40,6 +59,7 @@ const modelLabels: Record<string, string> = {
   NOVA: 'Nova',
   OTHER: 'Другое',
   HUMAN: 'Человек',
+  HUMANIZER: 'Humanizer',
 }
 
 const clampScore = (value: unknown) => {
@@ -57,6 +77,11 @@ const entries = computed(() =>
     }))
     .sort((left, right) => right.score - left.score),
 )
+
+const topScore = computed(() => entries.value[0]?.score ?? 0)
+const hasConfidentMatch = computed(() => topScore.value >= 0.001)
+const topLabel = computed(() => (hasConfidentMatch.value ? entries.value[0]?.label : 'Нет уверенного следа'))
+const endpointLabel = computed(() => (props.source?.includes('pangramlabs') ? 'Модельный endpoint' : 'Атрибуция моделей'))
 
 const formatScore = (value: number) => {
   if (value > 0 && value < 0.001) return '<0,1%'
@@ -109,6 +134,51 @@ const formatScore = (value: number) => {
   max-width: 45%;
   overflow: hidden;
   padding: 5px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.llm-prediction-card__top--muted {
+  background: var(--bg-sunken);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.llm-prediction-card__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.llm-prediction-card__options span {
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 7px;
+}
+
+.llm-prediction-card__summary {
+  align-items: center;
+  background: var(--paper-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink-2);
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.llm-prediction-card__request {
+  color: var(--muted);
+  font-size: 10px;
+  margin: -6px 0 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

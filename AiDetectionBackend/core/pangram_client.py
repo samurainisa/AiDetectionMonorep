@@ -254,7 +254,8 @@ class PangramService:
 
     def analyze_text(self, text: str, detailed_analysis: bool = False) -> PangramNormalizedResponse:
         response = self._predict_v3(text=text, detailed_analysis=detailed_analysis)
-        self._enrich_with_model_attribution(response, text)
+        if detailed_analysis:
+            self._enrich_with_model_attribution(response, text)
         return normalize_v3_response(response)
 
     def analyze_batch(self, texts: Sequence[str]) -> list[PangramNormalizedResponse]:

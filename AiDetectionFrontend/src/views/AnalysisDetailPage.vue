@@ -61,7 +61,8 @@
                 :data-cls="segCls(windowItem)"
                 :class="{ active: activeSeg === index }"
                 :title="`${segmentAiPercent(windowItem)}% ИИ`"
-                @click="activeSeg = index"
+                :ref="(element) => setSegmentRef(element, index)"
+                @click="scrollToSegment(index)"
               >
                 {{ windowItem.text }}
               </span>
@@ -123,12 +124,18 @@
                 <div class="result-card__metrics">
                   <MetricBar label="ИИ" :value="aiProb" color="var(--ai)" />
                   <MetricBar label="Человек" :value="humanProb" color="var(--human)" />
-                  <MetricBar label="Неопр." :value="uncertainProb" color="var(--mixed)" />
+                  <MetricBar label="Неопределённо" :value="uncertainProb" color="var(--mixed)" />
                 </div>
               </div>
             </div>
 
-            <LlmPredictionCard :prediction="det.full_response?.llm_prediction" />
+            <LlmPredictionCard
+              :prediction="det.full_response?.llm_prediction"
+              :label="det.full_response?.llm_prediction_label"
+              :ai-likelihood="det.full_response?.llm_prediction_ai_likelihood"
+              :source="det.full_response?.llm_prediction_source"
+              :request-id="det.full_response?.llm_prediction_request_id"
+            />
           </div>
 
           <template v-if="tab === 'details'">
@@ -174,6 +181,68 @@
 
           <div v-if="tab === 'graph'" class="panel-scroll va-scroll">
             <template v-if="det.text_features">
+              <div v-if="det.full_response" class="va-card metrics-card">
+                <div class="panel-caption panel-caption--normal">Сводка Pangram</div>
+
+                <div class="feature-list">
+                  <div class="feature-row">
+                    <span class="feature-row__label">Версия анализа</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.version) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">ИИ-сгенерированный текст</span>
+                    <span class="feature-row__value">{{ displayPercent(det.full_response.fraction_ai) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">ИИ-ассистированный текст</span>
+                    <span class="feature-row__value">{{ displayPercent(det.full_response.fraction_ai_assisted) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Человеческий текст</span>
+                    <span class="feature-row__value">{{ displayPercent(det.full_response.fraction_human) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Средняя вероятность ИИ</span>
+                    <span class="feature-row__value">{{ displayPercent(det.full_response.avg_ai_likelihood) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Максимальная вероятность ИИ</span>
+                    <span class="feature-row__value">{{ displayPercent(det.full_response.max_ai_likelihood) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">ИИ-сегменты</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.num_ai_segments) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">ИИ-ассистированные сегменты</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.num_ai_assisted_segments) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Человеческие сегменты</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.num_human_segments) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="det.full_response?.llm_prediction_ai_likelihood != null" class="va-card metrics-card">
+                <div class="panel-caption panel-caption--normal">Модельная атрибуция</div>
+
+                <div class="feature-list">
+                  <div class="feature-row">
+                    <span class="feature-row__label">Вердикт модельного поиска</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.llm_prediction_label) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Вероятность ИИ по модельному поиску</span>
+                    <span class="feature-row__value">{{ displayPercent(det.full_response.llm_prediction_ai_likelihood) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Идентификатор запроса</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.llm_prediction_request_id) }}</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="va-card metrics-card">
                 <div class="panel-caption panel-caption--normal">Базовая статистика</div>
 
@@ -187,8 +256,31 @@
                     <span class="feature-row__value">{{ displayValue(det.text_features.basic.sentence_count) }}</span>
                   </div>
                   <div class="feature-row">
-                    <span class="feature-row__label">Ср. длина предл.</span>
+                    <span class="feature-row__label">Средняя длина предложения</span>
                     <span class="feature-row__value">{{ displayRounded(det.text_features.basic.avg_sentence_length) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Плотность пунктуации</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.basic.punctuation_density) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Доля верхнего регистра</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.basic.uppercase_ratio) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="det.text_features.linguistic" class="va-card metrics-card">
+                <div class="panel-caption panel-caption--normal">Лингвистика</div>
+
+                <div class="feature-list">
+                  <div class="feature-row">
+                    <span class="feature-row__label">Лексическое разнообразие</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.linguistic.type_token_ratio) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Доля уникальных слов</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.linguistic.hapax_ratio) }}</span>
                   </div>
                 </div>
               </div>
@@ -202,12 +294,54 @@
                     <span class="feature-row__value">{{ displayPercent(det.text_features.ai_detection.burstiness) }}</span>
                   </div>
                   <div class="feature-row">
-                    <span class="feature-row__label">Лекс. предсказуемость</span>
+                    <span class="feature-row__label">Лексическая предсказуемость</span>
                     <span class="feature-row__value">{{ displayPercent(det.text_features.ai_detection.lexical_predictability) }}</span>
                   </div>
                   <div class="feature-row">
-                    <span class="feature-row__label">Уник. биграмм</span>
+                    <span class="feature-row__label">Уникальность биграмм</span>
                     <span class="feature-row__value">{{ displayPercent(det.text_features.ai_detection.bigram_uniqueness) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Уникальность триграмм</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.ai_detection.trigram_uniqueness) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Разнообразие MTLD</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.ai_detection.mtld_diversity) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Смещение к первому лицу</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.ai_detection.pronoun_bias_first_person) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="det.text_features.readability" class="va-card metrics-card">
+                <div class="panel-caption panel-caption--normal">Читаемость</div>
+
+                <div class="feature-list">
+                  <div class="feature-row">
+                    <span class="feature-row__label">Индекс русской читаемости</span>
+                    <span class="feature-row__value">{{ displayRounded(det.text_features.readability.russian_readability) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="det.text_features.pangram_extended" class="va-card metrics-card">
+                <div class="panel-caption panel-caption--normal">Расширенные признаки Pangram</div>
+
+                <div class="feature-list">
+                  <div class="feature-row">
+                    <span class="feature-row__label">Количество ИИ-предложений</span>
+                    <span class="feature-row__value">{{ displayValue(det.text_features.pangram_extended.pangram_ai_sentences_count) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Разброс окон анализа</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.pangram_extended.pangram_window_burstiness) }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Дисперсия окон анализа</span>
+                    <span class="feature-row__value">{{ displayPercent(det.text_features.pangram_extended.pangram_window_variance) }}</span>
                   </div>
                 </div>
               </div>
@@ -227,7 +361,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import VeritasShell from '../components/VeritasShell.vue'
 import VIcon from '../components/VIcon.vue'
@@ -266,6 +400,7 @@ const det = ref<DetectionDetail | null>(null)
 const tab = ref<TabId>('overview')
 const segMode = ref<SegmentModeId>('highlight')
 const activeSeg = ref<number | null>(null)
+const segmentRefs = ref<HTMLElement[]>([])
 const segFilter = ref<SegmentFilterId>('all')
 
 const tabs: Array<{ id: TabId; label: string; icon: string }> = [
@@ -331,8 +466,21 @@ const segmentAiPercent = (windowItem: WindowData) => Math.round((windowItem.ai_l
 const segmentIndex = (windowItem: WindowData) => windows.value.indexOf(windowItem)
 const segmentIsActive = (windowItem: WindowData) => activeSeg.value === segmentIndex(windowItem)
 
+const setSegmentRef = (element: Element | null, index: number) => {
+  if (element instanceof HTMLElement) {
+    segmentRefs.value[index] = element
+  }
+}
+
+const scrollToSegment = async (index: number) => {
+  if (index < 0) return
+  activeSeg.value = index
+  await nextTick()
+  segmentRefs.value[index]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+}
+
 const selectSegment = (windowItem: WindowData) => {
-  activeSeg.value = segmentIndex(windowItem)
+  void scrollToSegment(segmentIndex(windowItem))
 }
 
 const segmentItemStyle = (windowItem: WindowData) => {
@@ -749,6 +897,7 @@ onMounted(async () => {
   border-bottom: 1px solid var(--border);
   display: flex;
   font-size: 12px;
+  gap: 14px;
   justify-content: space-between;
   padding: 5px 0;
 }
@@ -759,6 +908,7 @@ onMounted(async () => {
 
 .feature-row__label {
   color: var(--muted);
+  min-width: 0;
 }
 
 .feature-row__value {

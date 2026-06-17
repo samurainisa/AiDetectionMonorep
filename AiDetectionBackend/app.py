@@ -63,7 +63,7 @@ app.config['SECRET_KEY'] = get_env_required('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = get_env_required('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 32 * 1024 * 1024))
 
 def ensure_database_exists(database_url: str) -> None:
     try:

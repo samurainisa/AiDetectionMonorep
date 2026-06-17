@@ -15,7 +15,7 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = 'uploads'
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 32 * 1024 * 1024))
     
     PANGRAM_API_KEY = os.environ.get('PANGRAM_API_KEY')
     

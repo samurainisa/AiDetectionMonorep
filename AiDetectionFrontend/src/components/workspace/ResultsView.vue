@@ -32,7 +32,13 @@
       </div>
     </section>
 
-    <LlmPredictionCard :prediction="response?.llm_prediction" />
+    <LlmPredictionCard
+      :prediction="response?.llm_prediction"
+      :label="response?.llm_prediction_label"
+      :ai-likelihood="response?.llm_prediction_ai_likelihood"
+      :source="response?.llm_prediction_source"
+      :request-id="response?.llm_prediction_request_id"
+    />
 
     <section v-if="detailed" class="va-card segment-card">
       <header class="section-header segment-card__header">

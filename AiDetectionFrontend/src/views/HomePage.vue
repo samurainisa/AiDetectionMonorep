@@ -39,6 +39,7 @@
               <div class="input-card__stats">
                 <span class="tnum">{{ wordCount }} слов</span>
                 <span class="tnum">{{ text.length }} симв.</span>
+                <span class="tnum">{{ estimatedTokens.toLocaleString('ru-RU') }} токенов</span>
               </div>
               <button class="va-btn ghost input-card__sample-button" type="button" @click="text = sampleText">
                 Вставить пример
@@ -68,7 +69,7 @@
                 </p>
               </div>
 
-              <p class="upload-zone__hint">DOCX · PDF · TXT, до 25 МБ</p>
+              <p class="upload-zone__hint">DOCX · PDF · TXT, до 32 МБ</p>
 
               <div v-if="uploadedFile" class="upload-zone__file-chip">
                 <VIcon name="file" :size="13" />
@@ -98,6 +99,7 @@
               {{ item.label }}
             </button>
           </div>
+          <p class="depth-switch__hint">{{ activeDepthHint }}</p>
 
           <div class="home-page__actions">
             <button class="va-btn accent analyze-button" type="button" :disabled="analyzing" @click="runAnalysis">
@@ -114,7 +116,13 @@
 
       <section class="home-page__result-panel va-scroll">
         <EmptyResults v-if="!hasResult && !analyzing" />
-        <AnalyzingState v-else-if="analyzing" />
+        <AnalyzingState
+          v-else-if="analyzing"
+          :title="analysisStateTitle"
+          :subtitle="analysisStateSubtitle"
+          :progress="analysisProgress"
+          :remaining-seconds="analysisRemainingSeconds"
+        />
         <ResultsView
           v-else-if="hasResult"
           :detection="result"
@@ -128,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import VeritasShell from '../components/VeritasShell.vue'
 import VIcon from '../components/VIcon.vue'
@@ -158,15 +166,19 @@ const router = useRouter()
 
 const breadcrumbs = [{ label: 'Анализ текста' }]
 const mode = ref<ModeId>('text')
-const depth = ref<DepthId>('extended')
+const depth = ref<DepthId>('quick')
 const text = ref('')
 const uploadedFile = ref<File | null>(null)
 const isDragging = ref(false)
 const analyzing = ref(false)
 const hasResult = ref(false)
 const result = ref<AnalyzeResponse | null>(null)
-const resultDetailed = ref(true)
+const resultDetailed = ref(false)
 const errorMsg = ref('')
+const analysisStartedAt = ref(0)
+const estimatedAnalysisSeconds = ref(8)
+const nowMs = ref(Date.now())
+let analysisTimer: ReturnType<typeof setInterval> | null = null
 
 const modes: ModeOption[] = [
   { id: 'text', label: 'Ввести текст', icon: 'sparkle' },
@@ -175,7 +187,12 @@ const modes: ModeOption[] = [
 
 const depthModes: DepthOption[] = [
   { id: 'quick', label: 'Быстрая', icon: 'zap', hint: 'Общий результат и процент вероятности ИИ' },
-  { id: 'extended', label: 'Расширенная', icon: 'layers', hint: 'Подробный разбор с подсветкой ИИ-фрагментов' },
+  {
+    id: 'extended',
+    label: 'Расширенная',
+    icon: 'layers',
+    hint: 'Подробный разбор, подсветка фрагментов и вероятные модели. Работает дольше, потому что выполняется дополнительная проверка.',
+  },
 ]
 
 const sampleText = `Предметной областью дипломной работы является процесс выявления и развития талантов детей с использованием веб-ориентированной информационной системы в условиях развивающихся стран. В центре данной предметной области находятся дети, их способности, результаты занятий, участие в секциях, а также взаимодействие между взрослыми участниками процесса.
@@ -183,6 +200,35 @@ const sampleText = `Предметной областью дипломной р�
 На практике выявление талантов требует не разовой оценки, а постоянного накопления и анализа данных. Для этого необходимо учитывать личные сведения о ребёнке, его принадлежность к одной или нескольким секциям, посещаемость занятий, оценки по итогам тренировок, общую динамику результатов и рекомендации по дальнейшему развитию.`
 
 const wordCount = computed(() => text.value.split(/\s+/).filter(Boolean).length)
+const estimatedTokens = computed(() => Math.max(0, Math.ceil(text.value.trim().length / 4)))
+const selectedSizeLabel = computed(() => {
+  if (mode.value === 'text') return `${estimatedTokens.value.toLocaleString('ru-RU')} токенов`
+  if (!uploadedFile.value) return 'Файл не выбран'
+  return `${formatFileSize(uploadedFile.value.size)}`
+})
+const analysisElapsedSeconds = computed(() =>
+  analysisStartedAt.value ? Math.floor((nowMs.value - analysisStartedAt.value) / 1000) : 0,
+)
+const analysisRemainingSeconds = computed(() =>
+  Math.max(0, estimatedAnalysisSeconds.value - analysisElapsedSeconds.value),
+)
+const analysisProgress = computed(() => {
+  if (!analyzing.value) return 0
+  const elapsed = analysisElapsedSeconds.value
+  const estimate = Math.max(1, estimatedAnalysisSeconds.value)
+  if (elapsed >= estimate) return 94
+  return Math.max(8, Math.min(92, Math.round((elapsed / estimate) * 100)))
+})
+const analysisStateTitle = computed(() => (mode.value === 'file' ? 'Анализируем файл...' : 'Анализируем текст...'))
+const analysisStateSubtitle = computed(() => {
+  const depthText = depth.value === 'extended' ? 'расширенная проверка с моделями' : 'быстрая проверка'
+  return `${selectedSizeLabel.value} · ${depthText}`
+})
+const activeDepthHint = computed(() =>
+  depth.value === 'extended'
+    ? 'Расширенная проверка добавит вероятные модели и подробные сегменты, поэтому займёт больше времени.'
+    : 'Быстрая проверка делает один запрос и показывает общий результат без модельной атрибуции.',
+)
 
 const onFileChange = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
@@ -209,6 +255,44 @@ const goToBatch = () => {
   router.push('/batch')
 }
 
+const formatFileSize = (bytes: number): string => {
+  if (!bytes) return '0 Б'
+  const units = ['Б', 'КБ', 'МБ', 'ГБ']
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+  return `${value.toLocaleString('ru-RU', { maximumFractionDigits: unitIndex ? 1 : 0 })} ${units[unitIndex]}`
+}
+
+const estimateAnalysisSeconds = () => {
+  const detailedMultiplier = depth.value === 'extended' ? 1.65 : 1
+  const textSize = mode.value === 'text' ? text.value.length : Math.round((uploadedFile.value?.size || 0) / 8)
+  const base = mode.value === 'file' ? 10 : 6
+  const bySize = Math.ceil(textSize / 4500)
+  const byFile = mode.value === 'file' ? Math.ceil((uploadedFile.value?.size || 0) / (1024 * 1024)) : 0
+  return Math.max(5, Math.min(180, Math.ceil((base + bySize + byFile) * detailedMultiplier)))
+}
+
+const startAnalysisTimer = () => {
+  estimatedAnalysisSeconds.value = estimateAnalysisSeconds()
+  analysisStartedAt.value = Date.now()
+  nowMs.value = Date.now()
+  if (analysisTimer) clearInterval(analysisTimer)
+  analysisTimer = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 250)
+}
+
+const stopAnalysisTimer = () => {
+  if (analysisTimer) {
+    clearInterval(analysisTimer)
+    analysisTimer = null
+  }
+}
+
 const runAnalysis = async () => {
   errorMsg.value = ''
 
@@ -224,6 +308,7 @@ const runAnalysis = async () => {
 
   analyzing.value = true
   hasResult.value = false
+  startAnalysisTimer()
 
   const detailed = depth.value === 'extended'
 
@@ -240,6 +325,7 @@ const runAnalysis = async () => {
     errorMsg.value = apiError?.error || 'Ошибка анализа'
   } finally {
     analyzing.value = false
+    stopAnalysisTimer()
   }
 }
 
@@ -252,6 +338,8 @@ const gotoPlagiarism = () => {
   if (!result.value?.detection_id) return
   router.push(`/plagiarism/${result.value.detection_id}`)
 }
+
+onUnmounted(stopAnalysisTimer)
 </script>
 
 <style scoped>
@@ -439,6 +527,13 @@ const gotoPlagiarism = () => {
 
 .depth-switch {
   margin-bottom: 2px;
+}
+
+.depth-switch__hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin: -4px 0 0;
 }
 
 .home-page__actions {

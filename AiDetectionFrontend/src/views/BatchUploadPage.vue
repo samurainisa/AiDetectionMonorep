@@ -310,7 +310,7 @@ const runOne = async (index: number) => {
 
   try {
     item.progress = 50
-    item.result = await aiDetectionAPI.uploadFile(item.file, true)
+    item.result = await aiDetectionAPI.uploadFile(item.file, false)
     item.progress = 100
   } catch (error) {
     const apiError = error as { error?: string } | null

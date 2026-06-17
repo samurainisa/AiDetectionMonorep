@@ -14,13 +14,6 @@ import type {
 // Конфигурация API
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000'
 
-// Отладочная информация
-console.log('🔧 API Configuration:', {
-  API_BASE_URL,
-  environment: import.meta.env.MODE,
-  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-})
-
 // Разрешенные типы файлов
 const ALLOWED_FILE_TYPES: AllowedFileType[] = ['pdf', 'docx', 'doc', 'txt']
 
