@@ -30,6 +30,37 @@ const firstProbability = (...values: Array<number | null | undefined>): number |
 
 const normalizeText = (value?: string) => (value || '').toLowerCase().trim()
 
+const predictionTranslations: Array<{ match: string; ru: string }> = [
+  {
+    match: 'we believe that this document is a mix of ai-generated, ai-assisted, and human-written content',
+    ru: 'Похоже, в документе смешаны ИИ-сгенерированные, ИИ-ассистированные и человеческие фрагменты.',
+  },
+  {
+    match: 'we believe that this document is fully human-written',
+    ru: 'Похоже, документ полностью написан человеком.',
+  },
+  {
+    match: 'we believe that this document is fully ai-generated',
+    ru: 'Похоже, документ полностью сгенерирован ИИ.',
+  },
+  {
+    match: 'this document appears to be ai-assisted',
+    ru: 'Похоже, документ написан человеком с помощью ИИ.',
+  },
+]
+
+export const localizePredictionText = (value?: string): string => {
+  const source = (value || '').trim()
+  if (!source) return ''
+
+  const normalized = normalizeText(source)
+  for (const item of predictionTranslations) {
+    if (normalized === item.match) return item.ru
+  }
+
+  return source
+}
+
 const verdictFromText = (value?: string): Verdict | undefined => {
   const text = normalizeText(value)
   if (!text) return undefined

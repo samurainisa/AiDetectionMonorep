@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
+from sqlalchemy import text as sql_text
 
 db = SQLAlchemy()
 
@@ -23,7 +24,7 @@ class Detection(db.Model):
     ai_likelihood = db.Column(db.Float, nullable=True)
     max_ai_likelihood = db.Column(db.Float, nullable=True)
     avg_ai_likelihood = db.Column(db.Float, nullable=True)
-    prediction = db.Column(db.String(100), nullable=True)
+    prediction = db.Column(db.Text, nullable=True)
     fraction_ai_content = db.Column(db.Float, nullable=True)
     full_response = db.Column(db.Text, nullable=False)
     
@@ -170,6 +171,15 @@ def init_database(app):
                     print("[OK] Миграция завершена")
                 else:
                     print("[OK] Все поля актуальны")
+
+                # Миграция типа prediction: VARCHAR(100) -> TEXT (PostgreSQL)
+                try:
+                    db.session.execute(sql_text("ALTER TABLE detection ALTER COLUMN prediction TYPE TEXT"))
+                    db.session.commit()
+                    print("[OK] Тип поля detection.prediction обновлён до TEXT")
+                except Exception as migration_error:
+                    db.session.rollback()
+                    print(f"[WARN] Не удалось обновить тип поля prediction (возможно уже TEXT): {migration_error}")
                     
     except Exception as e:
         print(f"[ERROR] Ошибка инициализации БД: {e}")

@@ -1,7 +1,13 @@
 <template>
   <VeritasShell active="home" :breadcrumbs="breadcrumbs">
     <div class="home-page">
-      <section class="home-page__input-panel">
+      <section
+        class="home-page__input-panel"
+        @dragenter.prevent="onDragEnter"
+        @dragleave.prevent="onDragLeave"
+        @dragover.prevent
+        @drop.prevent="onDrop"
+      >
         <div class="home-page__heading">
           <h1 class="serif home-page__title">Анализ текста</h1>
           <p class="home-page__subtitle">Вставьте текст или загрузите файл, результат появится справа.</p>
@@ -41,7 +47,7 @@
           </template>
 
           <template v-else>
-            <div class="upload-zone" @dragover.prevent @drop.prevent="onDrop">
+            <div class="upload-zone" :class="{ 'upload-zone--dragging': isDragging }">
               <div class="upload-zone__icon-wrap">
                 <VIcon name="upload" :size="22" />
               </div>
@@ -155,6 +161,7 @@ const mode = ref<ModeId>('text')
 const depth = ref<DepthId>('extended')
 const text = ref('')
 const uploadedFile = ref<File | null>(null)
+const isDragging = ref(false)
 const analyzing = ref(false)
 const hasResult = ref(false)
 const result = ref<AnalyzeResponse | null>(null)
@@ -185,12 +192,19 @@ const onFileChange = (event: Event) => {
 }
 
 const onDrop = (event: DragEvent) => {
+  isDragging.value = false
   const file = event.dataTransfer?.files?.[0]
   if (!file) return
   uploadedFile.value = file
   mode.value = 'file'
 }
-
+const onDragEnter = () => {
+  isDragging.value = true
+}
+const onDragLeave = (event: DragEvent) => {
+  const next = event.relatedTarget as Node | null
+  if (!next || !(event.currentTarget as HTMLElement).contains(next)) isDragging.value = false
+}
 const goToBatch = () => {
   router.push('/batch')
 }
@@ -357,6 +371,8 @@ const gotoPlagiarism = () => {
   padding: 40px;
   text-align: center;
 }
+
+.upload-zone--dragging { background: var(--accent-bg); outline: 2px dashed var(--accent); outline-offset: -8px; }
 
 .upload-zone__icon-wrap {
   align-items: center;

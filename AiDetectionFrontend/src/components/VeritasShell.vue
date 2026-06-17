@@ -7,24 +7,23 @@
         </div>
       </div>
 
-      <button class="va-btn primary sidebar-cta" type="button" @click="router.push('/')">
+      <RouterLink class="va-btn primary sidebar-cta" to="/">
         <VIcon name="plus" :size="14" />
         Новый анализ
-      </button>
+      </RouterLink>
 
       <nav class="sidebar-nav">
         <div class="sidebar-nav__label">Рабочее пространство</div>
-        <button
+        <RouterLink
           v-for="item in primaryNav"
           :key="item.id"
           class="nav-item"
           :class="{ 'nav-item--active': active === item.id }"
-          type="button"
-          @click="router.push(item.path)"
+          :to="item.path"
         >
           <VIcon :name="item.icon" :size="15" class="nav-item__icon" />
           <span class="nav-item__text">{{ item.label }}</span>
-        </button>
+        </RouterLink>
       </nav>
 
       <div class="sidebar-spacer" />
@@ -72,7 +71,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import VIcon from './VIcon.vue'
 import { AuthService, getUserDisplayName, getRoleDisplayName } from '../services/auth'
 
@@ -160,6 +159,7 @@ const logout = async () => {
 
 .brand {
   align-items: center;
+  margin: 0 auto;
   display: flex;
   gap: 10px;
   padding: 4px 6px;
@@ -230,6 +230,7 @@ const logout = async () => {
   gap: 10px;
   height: 34px;
   padding: 0 10px;
+  text-decoration: none;
   text-align: left;
   width: 100%;
 }

@@ -125,6 +125,7 @@ import VerdictBadge from '../VerdictBadge.vue'
 import DonutChart from '../DonutChart.vue'
 import MetricBar from '../MetricBar.vue'
 import {
+  localizePredictionText,
   resolveAiDistribution,
   resolveVerdict,
   segmentVerdictClass,
@@ -161,7 +162,7 @@ const topSimilarDocuments = computed(() => plagiarism.value?.similar_documents.s
 const verdict = computed(() => resolveVerdict(response.value))
 
 const verdictText = computed(() => {
-  if (response.value?.headline?.trim()) return response.value.headline
+  if (response.value?.headline?.trim()) return localizePredictionText(response.value.headline)
   if (verdict.value === 'ai') return 'Высокая вероятность генерации ИИ'
   if (verdict.value === 'human') return 'Текст написан человеком'
   return 'Вероятно, часть текста сгенерирована ИИ'
@@ -169,7 +170,7 @@ const verdictText = computed(() => {
 
 const verdictDescription = computed(
   () =>
-    response.value?.prediction ||
+    localizePredictionText(response.value?.prediction) ||
     'Мы выделили фрагменты с высокой вероятностью ИИ, пройдитесь по тексту и оцените их вручную.',
 )
 

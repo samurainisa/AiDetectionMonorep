@@ -62,11 +62,17 @@ def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, 
         'text_length': detection.text_length,
         'api_endpoint_used': detection.api_endpoint,
         'pangram_response': {
+            'headline': pangram_response.get('headline'),
             'ai_likelihood': detection.ai_likelihood,
             'max_ai_likelihood': detection.max_ai_likelihood,
             'avg_ai_likelihood': detection.avg_ai_likelihood,
             'prediction': detection.prediction,
+            'prediction_short': pangram_response.get('prediction_short'),
             'fraction_ai_content': detection.fraction_ai_content,
+            'fraction_ai': pangram_response.get('fraction_ai'),
+            'fraction_ai_assisted': pangram_response.get('fraction_ai_assisted'),
+            'fraction_human': pangram_response.get('fraction_human'),
+            'windows': pangram_response.get('windows') or [],
         },
     }
 

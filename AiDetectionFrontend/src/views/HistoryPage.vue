@@ -80,6 +80,7 @@
         <header class="table-head">
           <span>Документ</span>
           <span>Формат</span>
+          <span>Режим</span>
           <span>Слов</span>
           <span>ИИ %</span>
           <span>Вердикт</span>
@@ -104,6 +105,10 @@
 
           <span class="file-type-chip" :class="fileTypeClass(item.file_type)">
             {{ item.file_type || '—' }}
+          </span>
+
+          <span class="check-mode-chip" :class="checkModeClass(item.api_endpoint)">
+            {{ checkModeLabel(item.api_endpoint) }}
           </span>
 
           <span class="tnum row-word-count">{{ item.text_length?.toLocaleString('ru') || '0' }}</span>
@@ -208,6 +213,16 @@ const fileTypeClass = (value?: string) => {
   if (normalized === 'pdf') return 'file-type-chip--pdf'
   if (normalized === 'doc' || normalized === 'docx') return 'file-type-chip--doc'
   return 'file-type-chip--txt'
+}
+
+const checkModeLabel = (apiEndpoint?: string) => {
+  const value = (apiEndpoint || '').toLowerCase()
+  return value === 'v3_detailed' ? 'Расширенная' : 'Быстрая'
+}
+
+const checkModeClass = (apiEndpoint?: string) => {
+  const value = (apiEndpoint || '').toLowerCase()
+  return value === 'v3_detailed' ? 'check-mode-chip--extended' : 'check-mode-chip--quick'
 }
 
 const displayFilename = (value?: string, fileType?: string) => {
@@ -439,7 +454,7 @@ onMounted(() => {
   align-items: center;
   column-gap: 0;
   display: grid;
-  grid-template-columns: 0.9fr 90px 110px 120px 180px 150px 40px;
+  grid-template-columns: 0.85fr 90px 110px 110px 110px 170px 140px 40px;
   padding: 10px 16px;
 }
 
@@ -523,6 +538,27 @@ onMounted(() => {
 .file-type-chip--txt {
   background: #eeebe3;
   color: #5a5143;
+}
+
+.check-mode-chip {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.check-mode-chip--quick {
+  background: #efeafc;
+  color: #4f3f8a;
+}
+
+.check-mode-chip--extended {
+  background: #e6f3ec;
+  color: #2f6b49;
 }
 
 .row-word-count {

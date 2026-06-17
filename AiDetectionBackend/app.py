@@ -345,6 +345,7 @@ def get_history():
                 'id': d.id,
                 'filename': d.filename,
                 'file_type': d.file_type,
+                'api_endpoint': d.api_endpoint,
                 'ai_likelihood': d.ai_likelihood,
                 'prediction': d.prediction,
                 'created_at': d.created_at.isoformat(),
