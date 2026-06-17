@@ -17,7 +17,7 @@ services:
 
   backend:
     build:
-      context: ./AiDetectionKemsu/AiDetectionBackend
+      context: ./AiDetectionBackend
       dockerfile: Dockerfile
       args:
         INSTALL_TRAINING_DEPS: ${INSTALL_TRAINING_DEPS:-false}
