@@ -1,0 +1,20 @@
+# Caddy reverse proxy для ai-detection.ru
+# Авто-выпуск Let's Encrypt сертификата (нужны открытые порты 80 и 443)
+
+{
+	email samurainisa4@gmail.com
+}
+
+ai-detection.ru, www.ai-detection.ru {
+	encode gzip zstd
+
+	# API бэкенда: /api/* -> backend:5000 (префикс /api срезается)
+	handle_path /api/* {
+		reverse_proxy backend:5000
+	}
+
+	# Всё остальное -> статика фронтенда (SPA)
+	handle {
+		reverse_proxy frontend:80
+	}
+}
