@@ -126,6 +126,8 @@ interface NormalizedPlagiarismMatch extends PlagiarismMatch {
 
 interface RawPlagiarismReport {
   detection_id?: number
+  plagiarism_status?: string
+  plagiarism_pending?: boolean
   originality_percentage?: number
   plagiarism_level?: string
   total_similarity_score?: number
@@ -320,6 +322,16 @@ const load = async () => {
     ])
 
     detection.value = detectionResponse
+    if (
+      detectionResponse.plagiarism_status === 'pending' ||
+      reportResponse.plagiarism_status === 'pending' ||
+      reportResponse.plagiarism_pending
+    ) {
+      report.value = null
+      error.value = 'Антиплагиат еще рассчитывается. Основной результат уже готов, отчет появится в истории после завершения проверки.'
+      return
+    }
+
     report.value = normalizePlagiarismReport(reportResponse, currentDetectionId)
     activeSrc.value = report.value.similar_documents[0]?.detection_id ?? null
   } catch (requestError: unknown) {

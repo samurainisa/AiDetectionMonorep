@@ -122,6 +122,23 @@
         </div>
       </div>
     </section>
+
+    <section v-else-if="plagiarismPending" class="va-card plagiarism-pending-card">
+      <header class="section-header section-header--plagiarism">
+        <div class="section-header__left">
+          <span class="section-label">Антиплагиат</span>
+          <span class="va-chip mixed">
+            <span class="va-dot mixed" />
+            Считаем в фоне
+          </span>
+        </div>
+
+      </header>
+
+      <p class="plagiarism-pending-card__text">
+        Основной результат уже готов. Проверка совпадений продолжится в фоне и появится в истории анализа.
+      </p>
+    </section>
   </div>
 </template>
 
@@ -163,6 +180,9 @@ const uncertainProb = computed(() => distribution.value.uncertain)
 const windows = computed(() => response.value?.windows ?? [])
 
 const plagiarism = computed(() => props.detection?.plagiarism_report ?? null)
+const plagiarismPending = computed(() =>
+  props.detection?.plagiarism_status === 'pending' || Boolean(props.detection?.plagiarism_pending),
+)
 const plagiarismPct = computed(() =>
   plagiarism.value ? Math.round(100 - plagiarism.value.originality_percentage) : 0,
 )
@@ -348,6 +368,19 @@ const segmentTitle = (windowItem: WindowData) =>
 
 .plagiarism-card {
   padding: 18px;
+}
+
+.plagiarism-pending-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.plagiarism-pending-card__text {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .section-header--plagiarism {

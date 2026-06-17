@@ -47,7 +47,8 @@
           class="table-row"
           type="button"
           :class="{ 'table-row--last': index === items.length - 1 }"
-          @click="goToDetail(item.id)"
+          :disabled="!canOpenPlagiarism(item)"
+          @click="goToDetail(item)"
         >
           <div class="doc-cell">
             <VIcon name="file" :size="14" class="doc-icon" />
@@ -69,7 +70,9 @@
                 {{ plagiarismPercent(item.plagiarism_originality) }}%
               </span>
             </template>
-            <span v-else class="row-empty">—</span>
+            <span v-else class="plag-status" :class="plagiarismStatusClass(item)">
+              {{ plagiarismStatusLabel(item) }}
+            </span>
           </div>
 
           <span class="tnum row-value">{{ item.text_length?.toLocaleString('ru') || '—' }}</span>
@@ -85,7 +88,7 @@
           v-for="item in items"
           :key="item.id"
           :item="item"
-          @open="goToDetail"
+          @open="goToDetailById"
         />
         <p v-if="items.length === 0" class="table-state">Нет данных</p>
       </section>
@@ -132,6 +135,26 @@ const avgOriginalityDisplay = computed(() => {
 })
 
 const hasOriginality = (item: Detection): boolean => item.plagiarism_originality != null
+const plagiarismStatus = (item: Detection): string => {
+  if (hasOriginality(item)) return 'ready'
+  return item.plagiarism_status || (item.plagiarism_pending ? 'pending' : 'unknown')
+}
+
+const canOpenPlagiarism = (item: Detection): boolean => plagiarismStatus(item) === 'ready'
+
+const plagiarismStatusLabel = (item: Detection): string => {
+  const status = plagiarismStatus(item)
+  if (status === 'pending') return 'Антиплагиат рассчитывается'
+  if (status === 'unavailable') return 'Антиплагиат недоступен'
+  return 'Статус антиплагиата неизвестен'
+}
+
+const plagiarismStatusClass = (item: Detection): string => {
+  const status = plagiarismStatus(item)
+  if (status === 'pending') return 'plag-status--pending'
+  if (status === 'unavailable') return 'plag-status--muted'
+  return 'plag-status--unknown'
+}
 
 const displayFilename = (value?: string, fileType?: string): string => displayDocumentName(value, fileType)
 
@@ -158,8 +181,15 @@ const fmtDate = (value?: string): string => {
   })
 }
 
-const goToDetail = (id: number) => {
-  router.push(`/plagiarism/${id}`)
+const goToDetail = (item: Detection) => {
+  if (!canOpenPlagiarism(item)) return
+  router.push(`/plagiarism/${item.id}`)
+}
+
+const goToDetailById = (id: number) => {
+  const item = items.value.find((entry) => entry.id === id)
+  if (!item) return
+  goToDetail(item)
 }
 
 const goToNewAnalysis = () => {
@@ -300,6 +330,14 @@ onMounted(loadPage)
   background: var(--paper-hover);
 }
 
+.table-row:disabled {
+  cursor: default;
+}
+
+.table-row:disabled:hover {
+  background: transparent;
+}
+
 .table-row--last {
   border-bottom: 0;
 }
@@ -358,6 +396,27 @@ onMounted(loadPage)
 .row-empty {
   color: var(--muted-2);
   font-size: 12px;
+}
+
+.plag-status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 5px 8px;
+  white-space: normal;
+}
+
+.plag-status--pending {
+  background: var(--mixed-bg);
+  color: var(--mixed-ink);
+}
+
+.plag-status--unknown,
+.plag-status--muted {
+  background: var(--bg-sunken);
+  color: var(--muted);
 }
 
 .row-chevron {

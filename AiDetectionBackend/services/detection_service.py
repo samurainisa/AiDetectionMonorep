@@ -6,6 +6,10 @@
 сохранение детекции, привязка владельца, пересчёт плагиата и сборка ответа.
 """
 import json
+import os
+import threading
+
+from flask import current_app
 
 from core.database import (
     db,
@@ -15,6 +19,8 @@ from core.database import (
 )
 from core.pangram_client import analyze_text, determine_api_endpoint
 from plagiarism_engine import plagiarism_engine
+
+SYNC_PLAGIARISM_ON_ANALYZE = os.getenv('SYNC_PLAGIARISM_ON_ANALYZE', '').lower() in {'1', 'true', 'yes'}
 
 
 def get_optional_user_id(request) -> int | None:
@@ -53,7 +59,13 @@ def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, 
 
     _attach_owner(detection, user_id)
     _link_user_detection(detection, user_id)
-    plagiarism_report = _recompute_plagiarism(detection, text, filename)
+    plagiarism_report = None
+    plagiarism_pending = False
+
+    if SYNC_PLAGIARISM_ON_ANALYZE:
+        plagiarism_report = _recompute_plagiarism(detection, text, filename)
+    else:
+        plagiarism_pending = _schedule_plagiarism_check(detection.id, text, filename, user_id)
 
     response_data = {
         'detection_id': detection.id,
@@ -84,9 +96,42 @@ def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, 
     if plagiarism_report:
         report_dict = plagiarism_report.to_dict()
         response_data['plagiarism_report'] = report_dict
+        response_data['plagiarism_status'] = 'ready'
         _persist_plagiarism_check(detection, user_id, report_dict)
+    elif plagiarism_pending:
+        response_data['plagiarism_status'] = 'pending'
+        response_data['plagiarism_pending'] = True
+    else:
+        response_data['plagiarism_status'] = 'unknown'
 
     return response_data
+
+
+def _schedule_plagiarism_check(detection_id, text, filename, user_id):
+    """Runs plagiarism calculation after the main analysis response is returned."""
+    try:
+        app = current_app._get_current_object()
+    except RuntimeError:
+        return False
+
+    def job():
+        with app.app_context():
+            try:
+                detection = Detection.query.get(detection_id)
+                if not detection:
+                    return
+                plagiarism_report = _recompute_plagiarism(detection, text, filename)
+                if plagiarism_report:
+                    _persist_plagiarism_check(detection, user_id, plagiarism_report.to_dict())
+            except Exception as e:
+                db.session.rollback()
+                print(f"[WARN] Background plagiarism check failed for detection {detection_id}: {e}")
+            finally:
+                db.session.remove()
+
+    thread = threading.Thread(target=job, name=f"plagiarism-{detection_id}", daemon=True)
+    thread.start()
+    return True
 
 
 def _attach_owner(detection, user_id):

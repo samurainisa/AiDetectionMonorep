@@ -1,5 +1,5 @@
 <template>
-  <button class="mobile-plagiarism-card" type="button" @click="$emit('open', item.id)">
+  <button class="mobile-plagiarism-card" type="button" :disabled="!isReady" @click="openIfReady">
     <div class="mobile-plagiarism-card__top">
       <div class="mobile-plagiarism-card__file">
         <VIcon name="file" :size="15" />
@@ -8,10 +8,11 @@
           <p>{{ date }}</p>
         </div>
       </div>
-      <span class="mobile-plagiarism-card__score tnum" :style="{ color }">{{ plagiarism }}%</span>
+      <span v-if="isReady" class="mobile-plagiarism-card__score tnum" :style="{ color }">{{ plagiarism }}%</span>
+      <span v-else class="mobile-plagiarism-card__status" :class="statusClass">{{ statusLabel }}</span>
     </div>
 
-    <div class="mobile-plagiarism-card__meter">
+    <div v-if="isReady" class="mobile-plagiarism-card__meter">
       <span :style="{ width: `${plagiarism}%`, backgroundColor: color }" />
     </div>
 
@@ -32,13 +33,18 @@ const props = defineProps<{
   item: Detection
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   open: [id: number]
 }>()
 
 const title = computed(() => displayDocumentName(props.item.filename, props.item.file_type))
 const originality = computed(() => props.item.plagiarism_originality ?? 100)
 const plagiarism = computed(() => Math.round(100 - originality.value))
+const status = computed(() => {
+  if (props.item.plagiarism_originality != null) return 'ready'
+  return props.item.plagiarism_status || (props.item.plagiarism_pending ? 'pending' : 'unknown')
+})
+const isReady = computed(() => status.value === 'ready')
 const words = computed(() => props.item.text_length?.toLocaleString('ru') || '0')
 const date = computed(() =>
   props.item.created_at
@@ -59,10 +65,29 @@ const color = computed(() => {
 })
 
 const plagiarismLabel = computed(() => {
+  if (status.value === 'pending') return 'Проверка совпадений идет'
+  if (status.value === 'unavailable') return 'Антиплагиат недоступен'
+  if (status.value !== 'ready') return 'Статус пока неизвестен'
   if (plagiarism.value > 25) return 'Высокие совпадения'
   if (plagiarism.value > 10) return 'Есть совпадения'
   return 'Оригинальный текст'
 })
+
+const statusLabel = computed(() => {
+  if (status.value === 'pending') return 'На подсчете'
+  if (status.value === 'unavailable') return 'Недоступен'
+  return 'Неизвестно'
+})
+
+const statusClass = computed(() => {
+  if (status.value === 'pending') return 'mobile-plagiarism-card__status--pending'
+  return 'mobile-plagiarism-card__status--unknown'
+})
+
+const openIfReady = () => {
+  if (!isReady.value) return
+  emit('open', props.item.id)
+}
 </script>
 
 <style scoped>
@@ -135,6 +160,31 @@ const plagiarismLabel = computed(() => {
   font-size: 18px;
   font-weight: 800;
   line-height: 1;
+}
+
+.mobile-plagiarism-card:disabled {
+  cursor: default;
+}
+
+.mobile-plagiarism-card__status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.1;
+  max-width: 96px;
+  padding: 5px 7px;
+  text-align: center;
+}
+
+.mobile-plagiarism-card__status--pending {
+  background: var(--mixed-bg);
+  color: var(--mixed-ink);
+}
+
+.mobile-plagiarism-card__status--unknown {
+  background: var(--bg-sunken);
+  color: var(--muted);
 }
 
 .mobile-plagiarism-card__meter {

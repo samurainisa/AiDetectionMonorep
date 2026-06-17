@@ -3,6 +3,7 @@
 """
 import os
 import json
+from datetime import datetime, timedelta
 from io import BytesIO
 import psycopg2
 from sqlalchemy.engine import url as sa_url
@@ -28,6 +29,47 @@ from training_service import initialize_training_service, get_training_service
 from services.detection_service import analyze_and_store, get_optional_user_id
 
 app = Flask(__name__)
+
+PLAGIARISM_PENDING_WINDOW_SECONDS = int(os.getenv('PLAGIARISM_PENDING_WINDOW_SECONDS', 2 * 60 * 60))
+
+
+def _plagiarism_status_for_detection(detection, has_report=False):
+    if has_report:
+        return 'ready'
+
+    created_at = getattr(detection, 'created_at', None)
+    if created_at:
+        age = datetime.utcnow() - created_at
+        if age <= timedelta(seconds=PLAGIARISM_PENDING_WINDOW_SECONDS):
+            return 'pending'
+
+    return 'unknown'
+
+
+def _plagiarism_report_from_check(check):
+    if not check:
+        return None
+
+    try:
+        matches = json.loads(check.matches_json or '[]')
+    except Exception:
+        matches = []
+
+    try:
+        similar_documents = json.loads(check.similar_documents_json or '[]')
+    except Exception:
+        similar_documents = []
+
+    return {
+        'detection_id': check.detection_id,
+        'total_similarity_score': check.similarity_percentage or 0,
+        'plagiarism_level': check.plagiarism_level or 'original',
+        'originality_percentage': check.originality_percentage,
+        'total_fragments': check.total_fragments,
+        'matched_fragments': check.matched_fragments,
+        'matches': matches,
+        'similar_documents': similar_documents,
+    }
 
 def _build_cors_origins():
     """
@@ -360,14 +402,20 @@ def get_history():
                     detection_data['plagiarism_originality'] = pc.originality_percentage
                     detection_data['plagiarism_similarity'] = pc.similarity_percentage
                     detection_data['plagiarism_level'] = pc.plagiarism_level
+                    detection_data['plagiarism_status'] = 'ready'
                 else:
                     report = plagiarism_engine.get_report(d.id)
                     if report:
                         detection_data['plagiarism_originality'] = report.originality_percentage
                         detection_data['plagiarism_similarity'] = 100 - report.originality_percentage
                         detection_data['plagiarism_level'] = report.plagiarism_level.value
+                        detection_data['plagiarism_status'] = 'ready'
             except Exception:
                 pass  # Игнорируем ошибки получения данных о плагиате
+            
+            if 'plagiarism_status' not in detection_data:
+                detection_data['plagiarism_status'] = _plagiarism_status_for_detection(d)
+            detection_data['plagiarism_pending'] = detection_data['plagiarism_status'] == 'pending'
             
             detection_list.append(detection_data)
         
@@ -430,12 +478,18 @@ def get_detection(detection_id):
         # Получаем отчет о плагиате если есть
         plagiarism_report = None
         try:
-            report = plagiarism_engine.get_report(detection.id)
-            if report:
-                plagiarism_report = report.to_dict()
+            pc = PlagiarismCheck.query.filter_by(detection_id=detection.id).order_by(PlagiarismCheck.created_at.desc()).first()
+            if pc:
+                plagiarism_report = _plagiarism_report_from_check(pc)
+            else:
+                report = plagiarism_engine.get_report(detection.id)
+                if report:
+                    plagiarism_report = report.to_dict()
         except Exception as e:
             print(f"[WARN] Ошибка получения отчета о плагиате: {e}")
         
+        plagiarism_status = _plagiarism_status_for_detection(detection, has_report=bool(plagiarism_report))
+
         response_data = {
             'id': detection.id,
             'filename': detection.filename,
@@ -450,7 +504,9 @@ def get_detection(detection_id):
             'api_endpoint': detection.api_endpoint,
             'created_at': detection.created_at.isoformat(),
             'full_response': full_response,
-            'text_features': text_features
+            'text_features': text_features,
+            'plagiarism_status': plagiarism_status,
+            'plagiarism_pending': plagiarism_status == 'pending',
         }
         
         # Добавляем данные о плагиате если есть
@@ -567,6 +623,15 @@ def get_plagiarism_report(detection_id):
                 'similar_documents': similar_docs_list,
             }
         else:
+            status = _plagiarism_status_for_detection(detection)
+            if status == 'pending':
+                return jsonify({
+                    'detection_id': detection.id,
+                    'plagiarism_status': 'pending',
+                    'plagiarism_pending': True,
+                    'message': 'Антиплагиат рассчитывается',
+                }), 202
+
             try:
                 prev_docs = Detection.query.filter(
                     Detection.filename == detection.filename,

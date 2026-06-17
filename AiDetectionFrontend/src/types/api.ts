@@ -66,6 +66,8 @@ export interface AnalyzeResponse {
   api_endpoint_used: string
   pangram_response: PangramResponse
   plagiarism_report?: PlagiarismReport
+  plagiarism_pending?: boolean
+  plagiarism_status?: PlagiarismStatus
 }
 
 export interface BatchAnalyzeResult {
@@ -108,6 +110,8 @@ export interface PlagiarismReport {
   similar_documents: SimilarDocument[]
 }
 
+export type PlagiarismStatus = 'ready' | 'pending' | 'unknown' | 'unavailable'
+
 // History and detail responses
 export interface Detection {
   id: number
@@ -125,6 +129,8 @@ export interface Detection {
   created_at: string
   plagiarism_originality?: number
   plagiarism_level?: string
+  plagiarism_pending?: boolean
+  plagiarism_status?: PlagiarismStatus
 }
 
 export interface HistoryResponse {
@@ -150,6 +156,8 @@ export interface DetectionDetail {
   full_response: PangramResponse
   created_at: string
   plagiarism_report?: PlagiarismReport
+  plagiarism_pending?: boolean
+  plagiarism_status?: PlagiarismStatus
   text_features?: {
     basic?: {
       word_count: number
