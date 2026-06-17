@@ -1,0 +1,802 @@
+// Переменные
+$primary-color: #f97316;
+$primary-dark: #ea580c;
+$text-color: #374151;
+$text-light: #6b7280;
+$bg-light: #f9fafb;
+$border-color: #e5e7eb;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$error-color: #ef4444;
+
+// Базовые стили
+html {
+  font-family:
+    'Roboto',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  color: $text-color;
+  background-color: $bg-light;
+  font-family: 'Roboto', sans-serif;
+}
+
+// Компоненты
+.ai-detection {
+  &__header {
+    background-color: white;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+
+    &-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  &__main {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  &__title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+  }
+
+  &__subtitle {
+    color: #6b7280;
+    margin-bottom: 2rem;
+  }
+
+  &__card {
+    margin-bottom: 1.5rem;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-family: 'Roboto', sans-serif;
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px $primary-color;
+      border-color: $primary-color;
+    }
+
+    &--error {
+      border-color: #fca5a5;
+    }
+  }
+
+  &__word-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+
+  &__file-upload {
+    text-align: center;
+    padding: 3rem 0;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+
+    &:hover {
+      border-color: #9ca3af;
+      background-color: #f9fafb;
+    }
+  }
+
+  &__buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  &__result {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__prediction {
+    text-align: center;
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+
+    &-percentage {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+
+      &--high {
+        color: $error-color;
+      }
+      &--medium {
+        color: $warning-color;
+      }
+      &--low {
+        color: $success-color;
+      }
+    }
+
+    &-text {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    &-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+  }
+
+  &__progress-bar {
+    width: 100%;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    height: 0.75rem;
+    margin-bottom: 1rem;
+
+    &-fill {
+      height: 0.75rem;
+      border-radius: 9999px;
+      transition: all 0.5s ease;
+
+      &--high {
+        background-color: $error-color;
+      }
+      &--medium {
+        background-color: $warning-color;
+      }
+      &--low {
+        background-color: $success-color;
+      }
+    }
+  }
+
+  &__ai-sentences {
+    margin-top: 1.5rem;
+
+    &-title {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.75rem;
+    }
+
+    &-item {
+      padding: 0.75rem;
+      background-color: #fef2f2;
+      border-left: 4px solid #f87171;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    color: #b91c1c;
+  }
+}
+
+// Drawer стили
+.ai-drawer {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  &__logo {
+    width: 2rem;
+    height: 2rem;
+    background-color: $primary-color;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  &__nav {
+    padding: 1rem;
+  }
+
+  &__section {
+    margin-bottom: 1.5rem;
+
+    &-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  &__menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #f3f4f6;
+    }
+
+    &--active {
+      background-color: #fed7aa;
+      color: #c2410c;
+    }
+  }
+}
+
+// Утилиты
+.btn {
+  &--primary {
+    background-color: $primary-color;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: $primary-dark;
+    }
+  }
+
+  &--secondary {
+    background-color: #e5e7eb;
+    color: #374151;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #d1d5db;
+    }
+  }
+
+  &--outline {
+    border: 1px solid #d1d5db;
+    background-color: transparent;
+    color: #374151;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #9ca3af;
+      background-color: #f9fafb;
+    }
+  }
+}
+
+.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+// Анимации
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+// Адаптивность
+@media (max-width: 768px) {
+  .ai-detection {
+    &__main {
+      padding: 1rem;
+    }
+
+    &__buttons {
+      flex-direction: column;
+    }
+  }
+}
+
+// PrimeVue кастомизация
+.p-button {
+  font-family: 'Roboto', sans-serif !important;
+}
+
+.p-card {
+  font-family: 'Roboto', sans-serif !important;
+}
+
+.p-inputtextarea {
+  font-family: 'Roboto', sans-serif !important;
+}
+
+.p-drawer {
+  font-family: 'Roboto', sans-serif !important;
+}
+
+// Глобальные стили для PrimeVue компонентов (светлая тема)
+.p-dropdown,
+.p-select {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+}
+
+.p-dropdown .p-dropdown-label,
+.p-select .p-select-label {
+  background-color: white !important;
+  color: #374151 !important;
+  padding: 0.75rem !important;
+}
+
+.p-dropdown .p-dropdown-label.p-placeholder,
+.p-select .p-select-label.p-placeholder {
+  color: #6b7280 !important;
+}
+
+.p-dropdown:not(.p-disabled):hover,
+.p-select:not(.p-disabled):hover {
+  border-color: #9ca3af !important;
+}
+
+.p-dropdown:not(.p-disabled).p-focus,
+.p-select:not(.p-disabled).p-focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.p-dropdown-panel,
+.p-select-list-container {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.p-dropdown-items .p-dropdown-item,
+.p-select-list .p-select-option {
+  background-color: white !important;
+  color: #374151 !important;
+  padding: 0.75rem !important;
+}
+
+.p-dropdown-items .p-dropdown-item:hover,
+.p-select-list .p-select-option:hover {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.p-dropdown-items .p-dropdown-item.p-highlight,
+.p-select-list .p-select-option[data-p-selected='true'] {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+// Calendar стили
+.p-calendar {
+  background-color: white !important;
+}
+
+.p-calendar .p-inputtext {
+  background-color: white !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  padding: 0.75rem !important;
+}
+
+.p-calendar .p-inputtext:hover {
+  border-color: #9ca3af !important;
+}
+
+.p-calendar .p-inputtext:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+// Стили для панели календаря
+.p-datepicker {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.p-datepicker .p-datepicker-header {
+  background-color: white !important;
+  color: #374151 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.p-datepicker .p-datepicker-title {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+.p-datepicker .p-datepicker-prev,
+.p-datepicker .p-datepicker-next {
+  color: #6b7280 !important;
+}
+
+.p-datepicker .p-datepicker-prev:hover,
+.p-datepicker .p-datepicker-next:hover {
+  color: #374151 !important;
+  background-color: #f3f4f6 !important;
+}
+
+.p-datepicker table {
+  background-color: white !important;
+}
+
+.p-datepicker table th {
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  background-color: #f9fafb !important;
+}
+
+.p-datepicker table td {
+  background-color: white !important;
+}
+
+.p-datepicker table td > span {
+  color: #374151 !important;
+  background-color: transparent !important;
+}
+
+.p-datepicker table td > span:hover {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.p-datepicker table td.p-datepicker-today > span {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+}
+
+.p-datepicker table td.p-highlight > span {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.p-datepicker table td.p-datepicker-other-month > span {
+  color: #9ca3af !important;
+}
+
+// InputText стили
+.p-inputtext {
+  background-color: white !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  padding: 0.75rem !important;
+}
+
+.p-inputtext:hover {
+  border-color: #9ca3af !important;
+}
+
+.p-inputtext:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+// Slider стили
+.p-slider {
+  background-color: #e5e7eb !important;
+  border-radius: 0.25rem !important;
+}
+
+.p-slider .p-slider-range {
+  background-color: #3b82f6 !important;
+  border-radius: 0.25rem !important;
+}
+
+.p-slider .p-slider-handle {
+  background-color: #3b82f6 !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 50% !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.p-slider .p-slider-handle:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+// Tag стили для светлой темы
+.p-tag {
+  border-radius: 0.375rem !important;
+  padding: 0.25rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+.p-tag.p-tag-info {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+}
+
+.p-tag.p-tag-success {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.p-tag.p-tag-warning {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+.p-tag.p-tag-danger {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+// Стили для новой версии PrimeVue с data-p атрибутами - светлые тона
+.p-tag[data-p~='success'] {
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.p-tag[data-p~='info'] {
+  background-color: #fefce8 !important;
+  color: #a16207 !important;
+  border: 1px solid #fde047 !important;
+}
+
+.p-tag[data-p~='warning'] {
+  background-color: #fff7ed !important;
+  color: #c2410c !important;
+  border: 1px solid #fed7aa !important;
+}
+
+.p-tag[data-p~='danger'] {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+.p-tag[data-p~='secondary'] {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+// Дополнительные стили для новых версий PrimeVue
+.p-select-open {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.p-select-list {
+  background-color: white !important;
+  border: none !important;
+  padding: 0.25rem !important;
+}
+
+.p-select-option-label {
+  color: #374151 !important;
+}
+
+.p-select-option:hover .p-select-option-label {
+  color: #374151 !important;
+}
+
+.p-select-option[data-p-selected='true'] .p-select-option-label {
+  color: white !important;
+}
+
+.p-select-option[data-p-focused='true'] {
+  background-color: #f3f4f6 !important;
+}
+
+.p-select-option[data-p-focused='true'] .p-select-option-label {
+  color: #374151 !important;
+}
+
+// Overlay панели
+.p-component-overlay {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+// Календарь overlay
+.p-datepicker-panel {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.5rem !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+// Дополнительные стили для календаря с новыми классами
+.p-datepicker-calendar-container {
+  background-color: white !important;
+}
+
+.p-datepicker-calendar {
+  background-color: white !important;
+}
+
+.p-datepicker-header {
+  background-color: white !important;
+  color: #374151 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 1rem !important;
+}
+
+.p-datepicker-title {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+.p-datepicker-select-month,
+.p-datepicker-select-year {
+  background-color: transparent !important;
+  color: #374151 !important;
+  border: none !important;
+  font-weight: 600 !important;
+  padding: 0.5rem !important;
+  border-radius: 0.25rem !important;
+}
+
+.p-datepicker-select-month:hover,
+.p-datepicker-select-year:hover {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.p-datepicker-prev-button,
+.p-datepicker-next-button {
+  background-color: transparent !important;
+  color: #6b7280 !important;
+  border: none !important;
+}
+
+.p-datepicker-prev-button:hover,
+.p-datepicker-next-button:hover {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.p-datepicker-day-view {
+  background-color: white !important;
+}
+
+.p-datepicker-weekday-cell {
+  background-color: #f9fafb !important;
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  padding: 0.75rem !important;
+}
+
+.p-datepicker-weekday {
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+}
+
+.p-datepicker-day-cell {
+  background-color: white !important;
+  padding: 0.25rem !important;
+}
+
+.p-datepicker-day {
+  background-color: transparent !important;
+  color: #374151 !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+}
+
+.p-datepicker-day:hover {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.p-datepicker-today .p-datepicker-day {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  font-weight: 600 !important;
+}
+
+.p-datepicker-today .p-datepicker-day:hover {
+  background-color: #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+.p-datepicker-day[data-p='today'] {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  font-weight: 600 !important;
+}
+
+.p-datepicker-day[aria-selected='true'] {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.p-datepicker-other-month .p-datepicker-day {
+  color: #9ca3af !important;
+}
+
+.p-datepicker-other-month .p-datepicker-day:hover {
+  background-color: #f3f4f6 !important;
+  color: #9ca3af !important;
+}
+
+.p-disabled {
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+}
