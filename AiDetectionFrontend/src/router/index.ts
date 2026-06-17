@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { AuthService } from '../services/auth'
+import { AuthService, defaultRouteForRole } from '../services/auth'
 import HomePage from '../views/HomePage.vue'
 import DetectorPage from '../views/DetectorPage.vue'
 import HistoryPage from '../views/HistoryPage.vue'
@@ -82,9 +82,10 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // Если маршрут только для гостей, но пользователь авторизован
+  // Если маршрут только для гостей, но пользователь авторизован —
+  // отправляем на стартовый экран его роли
   if (to.meta.requiresGuest && isAuthenticated) {
-    next({ name: 'home' })
+    next(defaultRouteForRole(AuthService.getUser()?.role))
     return
   }
 
