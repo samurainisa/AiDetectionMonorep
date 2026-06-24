@@ -1,0 +1,9 @@
+train.jsonl
+valid.jsonl
+test.jsonl
+data/
+artifacts/
+**/__pycache__/
+**/*.pyc
+models/**/checkpoint-*/
+

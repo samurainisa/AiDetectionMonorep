@@ -26,16 +26,34 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      ml-service:
+        condition: service_started
     environment:
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/ai_detection
       PANGRAM_API_KEY: ${PANGRAM_API_KEY:-}
+      ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml-service:8001}
       AI_MODE: ${AI_MODE:-pangram_only}
       CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:--1}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://ai-detection.ru,https://www.ai-detection.ru}
       FLASK_ENV: production
     volumes:
       - backend_uploads:/app/uploads
+
+  ml-service:
+    build:
+      context: ./AiDetectionML
+      dockerfile: ml_service/Dockerfile
+    container_name: aidetection-ml
+    restart: unless-stopped
+    environment:
+      MODEL_DIR: /app/models/rubert_tiny2_ai_detector
+      MAX_TEXT_LENGTH: ${ML_MAX_TEXT_LENGTH:-20000}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
   frontend:
     build:

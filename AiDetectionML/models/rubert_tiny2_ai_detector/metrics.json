@@ -1,0 +1,27 @@
+{
+  "model": "rubert_tiny2_ai_detector",
+  "base_model": "cointegrated/rubert-tiny2",
+  "task": "binary_text_classification",
+  "labels": {
+    "0": "human",
+    "1": "ai"
+  },
+  "dataset": {
+    "train_size": 6000,
+    "valid_size": 1000,
+    "test_size": 1000
+  },
+  "metrics": {
+    "accuracy": 0.826,
+    "precision": 0.8196078431372549,
+    "recall": 0.836,
+    "f1": 0.8277227722772277
+  },
+  "limitations": [
+    "pilot model",
+    "not production-ready",
+    "result is probabilistic",
+    "cannot be used as proof of academic misconduct",
+    "trained only on the Russian subset in the first version"
+  ]
+}

@@ -164,6 +164,11 @@ def upload_file():
             return jsonify({'error': 'Файл не выбран'}), 400
 
         detailed_analysis = request.form.get('detailed_analysis', 'false').lower() == 'true'
+        analysis_provider = str(request.form.get('analysis_provider') or 'pangram').lower()
+        if analysis_provider not in {'pangram', 'local'}:
+            return jsonify({'error': 'Неизвестная модель проверки'}), 400
+        if analysis_provider == 'local':
+            detailed_analysis = False
 
         if not (file and allowed_file(file.filename)):
             return jsonify({'error': 'Неподдерживаемый тип файла'}), 400
@@ -192,6 +197,7 @@ def upload_file():
             detailed_analysis=detailed_analysis,
             user_id=user_id,
             feature_extractor=feature_extractor,
+            analysis_provider=analysis_provider,
         )
         return jsonify(response_data)
 
@@ -210,6 +216,11 @@ def analyze_text_endpoint():
 
         text = data['text']
         detailed_analysis = data.get('detailed_analysis', False)
+        analysis_provider = str(data.get('analysis_provider') or 'pangram').lower()
+        if analysis_provider not in {'pangram', 'local'}:
+            return jsonify({'error': 'Неизвестная модель проверки'}), 400
+        if analysis_provider == 'local':
+            detailed_analysis = False
 
         # Минимальная длина текста — по количеству слов
         if len(text.split()) < 3:
@@ -222,6 +233,7 @@ def analyze_text_endpoint():
             detailed_analysis=detailed_analysis,
             user_id=user_id,
             feature_extractor=feature_extractor,
+            analysis_provider=analysis_provider,
         )
         return jsonify(response_data)
 

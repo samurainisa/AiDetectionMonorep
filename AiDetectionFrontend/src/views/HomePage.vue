@@ -85,7 +85,27 @@
         </div>
 
         <div class="home-page__controls">
-          <div class="mode-switch depth-switch">
+          <div class="provider-switch" aria-label="Модель проверки">
+            <button
+              v-for="item in providerOptions"
+              :key="item.id"
+              class="provider-card"
+              :class="{ 'provider-card--active': provider === item.id }"
+              type="button"
+              :title="item.hint"
+              @click="selectProvider(item.id)"
+            >
+              <span class="provider-card__icon">
+                <VIcon :name="item.icon" :size="16" />
+              </span>
+              <span class="provider-card__body">
+                <span class="provider-card__title">{{ item.label }}</span>
+                <span class="provider-card__text">{{ item.short }}</span>
+              </span>
+            </button>
+          </div>
+
+          <div v-if="!isLocalProvider" class="mode-switch depth-switch">
             <button
               v-for="item in depthModes"
               :key="item.id"
@@ -98,6 +118,15 @@
               <VIcon :name="item.icon" :size="14" />
               {{ item.label }}
             </button>
+          </div>
+          <div v-else class="local-mode-summary">
+            <span class="local-mode-summary__icon">
+              <VIcon name="shield" :size="15" />
+            </span>
+            <span>
+              <span class="local-mode-summary__title">Обычная локальная проверка</span>
+              <span class="local-mode-summary__text">Вероятность ИИ/человек без сегментов и модельной атрибуции</span>
+            </span>
           </div>
           <p class="depth-switch__hint">{{ activeDepthHint }}</p>
 
@@ -144,10 +173,11 @@ import EmptyResults from '../components/workspace/EmptyResults.vue'
 import AnalyzingState from '../components/workspace/AnalyzingState.vue'
 import ResultsView from '../components/workspace/ResultsView.vue'
 import { aiDetectionAPI } from '../services/api'
-import type { AnalyzeResponse } from '../types/api'
+import type { AnalysisProvider, AnalyzeResponse } from '../types/api'
 
 type ModeId = 'text' | 'file'
 type DepthId = 'quick' | 'extended'
+type ProviderId = AnalysisProvider
 
 interface ModeOption {
   id: ModeId
@@ -162,11 +192,20 @@ interface DepthOption {
   hint: string
 }
 
+interface ProviderOption {
+  id: ProviderId
+  label: string
+  short: string
+  icon: string
+  hint: string
+}
+
 const router = useRouter()
 
 const breadcrumbs = [{ label: 'Анализ текста' }]
 const mode = ref<ModeId>('text')
 const depth = ref<DepthId>('quick')
+const provider = ref<ProviderId>('pangram')
 const text = ref('')
 const uploadedFile = ref<File | null>(null)
 const isDragging = ref(false)
@@ -195,6 +234,23 @@ const depthModes: DepthOption[] = [
   },
 ]
 
+const providerOptions: ProviderOption[] = [
+  {
+    id: 'pangram',
+    label: 'Облачная проверка',
+    short: 'Быстрая или расширенная проверка',
+    icon: 'zap',
+    hint: 'Внешний детектор: быстрый общий скоринг или расширенный разбор с сегментами и вероятными моделями.',
+  },
+  {
+    id: 'local',
+    label: 'Локальная модель',
+    short: 'Обычная проверка на вашем сервере',
+    icon: 'shield',
+    hint: 'Пилотная локальная модель: вероятность ИИ/человек без сегментной разметки.',
+  },
+]
+
 const sampleText = `Предметной областью дипломной работы является процесс выявления и развития талантов детей с использованием веб-ориентированной информационной системы в условиях развивающихся стран. В центре данной предметной области находятся дети, их способности, результаты занятий, участие в секциях, а также взаимодействие между взрослыми участниками процесса.
 
 На практике выявление талантов требует не разовой оценки, а постоянного накопления и анализа данных. Для этого необходимо учитывать личные сведения о ребёнке, его принадлежность к одной или нескольким секциям, посещаемость занятий, оценки по итогам тренировок, общую динамику результатов и рекомендации по дальнейшему развитию.`
@@ -206,6 +262,8 @@ const selectedSizeLabel = computed(() => {
   if (!uploadedFile.value) return 'Файл не выбран'
   return `${formatFileSize(uploadedFile.value.size)}`
 })
+const selectedProvider = computed(() => providerOptions.find((item) => item.id === provider.value) ?? providerOptions[0])
+const isLocalProvider = computed(() => provider.value === 'local')
 const analysisElapsedSeconds = computed(() =>
   analysisStartedAt.value ? Math.floor((nowMs.value - analysisStartedAt.value) / 1000) : 0,
 )
@@ -221,11 +279,17 @@ const analysisProgress = computed(() => {
 })
 const analysisStateTitle = computed(() => (mode.value === 'file' ? 'Анализируем файл...' : 'Анализируем текст...'))
 const analysisStateSubtitle = computed(() => {
-  const depthText = depth.value === 'extended' ? 'расширенная проверка с моделями' : 'быстрая проверка'
-  return `${selectedSizeLabel.value} · ${depthText}`
+  const modeText = isLocalProvider.value
+    ? 'локальная обычная проверка'
+    : depth.value === 'extended'
+      ? 'расширенная проверка с сегментами и моделями'
+      : 'быстрая проверка'
+  return `${selectedSizeLabel.value} · ${selectedProvider.value.label} · ${modeText}`
 })
 const activeDepthHint = computed(() =>
-  depth.value === 'extended'
+  isLocalProvider.value
+    ? 'Локальная модель работает на вашем сервере и возвращает вероятность ИИ/человек. Сегменты и вероятные LLM-модели доступны только в расширенном облачном режиме.'
+    : depth.value === 'extended'
     ? 'Расширенная проверка добавит вероятные модели и подробные сегменты, поэтому займёт больше времени.'
     : 'Быстрая проверка делает один запрос и показывает общий результат без модельной атрибуции.',
 )
@@ -255,6 +319,13 @@ const goToBatch = () => {
   router.push('/batch')
 }
 
+const selectProvider = (nextProvider: ProviderId) => {
+  provider.value = nextProvider
+  if (nextProvider === 'local') {
+    depth.value = 'quick'
+  }
+}
+
 const formatFileSize = (bytes: number): string => {
   if (!bytes) return '0 Б'
   const units = ['Б', 'КБ', 'МБ', 'ГБ']
@@ -268,7 +339,7 @@ const formatFileSize = (bytes: number): string => {
 }
 
 const estimateAnalysisSeconds = () => {
-  const detailedMultiplier = depth.value === 'extended' ? 1.65 : 1
+  const detailedMultiplier = !isLocalProvider.value && depth.value === 'extended' ? 1.65 : 1
   const textSize = mode.value === 'text' ? text.value.length : Math.round((uploadedFile.value?.size || 0) / 8)
   const base = mode.value === 'file' ? 10 : 6
   const bySize = Math.ceil(textSize / 4500)
@@ -310,13 +381,13 @@ const runAnalysis = async () => {
   hasResult.value = false
   startAnalysisTimer()
 
-  const detailed = depth.value === 'extended'
+  const detailed = provider.value === 'pangram' && depth.value === 'extended'
 
   try {
     if (mode.value === 'text') {
-      result.value = await aiDetectionAPI.analyzeText(text.value, detailed)
+      result.value = await aiDetectionAPI.analyzeText(text.value, detailed, provider.value)
     } else {
-      result.value = await aiDetectionAPI.uploadFile(uploadedFile.value as File, detailed)
+      result.value = await aiDetectionAPI.uploadFile(uploadedFile.value as File, detailed, provider.value)
     }
     resultDetailed.value = detailed
     hasResult.value = true
@@ -406,6 +477,113 @@ onUnmounted(stopAnalysisTimer)
   background: var(--paper);
   box-shadow: var(--shadow-sm);
   color: var(--ink);
+}
+
+.mode-switch__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.provider-switch {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.provider-card {
+  align-items: flex-start;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.provider-card:hover {
+  border-color: rgba(237, 112, 58, 0.45);
+  box-shadow: var(--shadow-sm);
+}
+
+.provider-card--active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(237, 112, 58, 0.14);
+}
+
+.provider-card__icon {
+  align-items: center;
+  background: var(--accent-bg);
+  border-radius: 8px;
+  color: var(--accent-ink);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.provider-card__body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.provider-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.provider-card__text {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+.local-mode-summary {
+  align-items: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--ink);
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.local-mode-summary__icon {
+  align-items: center;
+  background: var(--paper);
+  border-radius: 8px;
+  color: var(--accent-ink);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.local-mode-summary__title,
+.local-mode-summary__text {
+  display: block;
+}
+
+.local-mode-summary__title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.local-mode-summary__text {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
 .input-card {
@@ -624,6 +802,10 @@ onUnmounted(stopAnalysisTimer)
     min-width: 0;
     padding-left: 8px;
     padding-right: 8px;
+  }
+
+  .provider-switch {
+    grid-template-columns: 1fr;
   }
 
   .depth-switch {

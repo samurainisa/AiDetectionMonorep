@@ -17,6 +17,7 @@ from core.database import (
     PlagiarismCheck,
     save_detection_with_features,
 )
+from core.local_ml_client import LOCAL_ENDPOINT_TYPE, analyze_text_local
 from core.pangram_client import analyze_text, determine_api_endpoint
 from plagiarism_engine import plagiarism_engine
 
@@ -40,12 +41,44 @@ def get_optional_user_id(request) -> int | None:
         return None
 
 
-def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, feature_extractor):
+def analyze_and_store(
+    text,
+    *,
+    filename,
+    file_type,
+    detailed_analysis,
+    user_id,
+    feature_extractor,
+    analysis_provider='pangram',
+):
     """Полный цикл анализа одного текста и сохранения результата.
 
     Возвращает словарь ответа (detection + pangram_response + plagiarism_report).
     """
-    pangram_response = analyze_text(text, detailed_analysis=detailed_analysis)
+    provider = (analysis_provider or 'pangram').lower()
+    if provider == 'local':
+        detailed_analysis = False
+        pangram_response = analyze_text_local(text)
+        endpoint_type = LOCAL_ENDPOINT_TYPE
+    else:
+        pangram_response = analyze_text(text, detailed_analysis=detailed_analysis)
+        endpoint_type = determine_api_endpoint(len(text.split()), detailed_analysis=detailed_analysis)
+        pangram_response.setdefault('provider', 'pangram')
+        pangram_response.setdefault('provider_label', 'Облачная проверка')
+        pangram_response.setdefault('analysis_mode', 'extended' if detailed_analysis else 'quick')
+        pangram_response.setdefault('analysis_mode_label', 'Расширенная проверка' if detailed_analysis else 'Быстрая проверка')
+        pangram_response.setdefault('model_name', 'pangram_v3_detailed' if detailed_analysis else 'pangram_v3')
+        pangram_response.setdefault(
+            'model_display_name',
+            'Облачная проверка, расширенный режим' if detailed_analysis else 'Облачная проверка',
+        )
+        pangram_response.setdefault(
+            'model_description',
+            'Внешний детектор с посегментной разметкой, модельной атрибуцией и общим скорингом.'
+            if detailed_analysis
+            else 'Внешний детектор с быстрым общим скорингом вероятности ИИ без модельной атрибуции.',
+        )
+
     text_features = feature_extractor.extract_features(text)
 
     detection = save_detection_with_features(
@@ -53,7 +86,7 @@ def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, 
         file_type,
         text,
         pangram_response,
-        determine_api_endpoint(len(text.split()), detailed_analysis=detailed_analysis),
+        endpoint_type,
         text_features,
     )
 
@@ -67,30 +100,37 @@ def analyze_and_store(text, *, filename, file_type, detailed_analysis, user_id, 
     else:
         plagiarism_pending = _schedule_plagiarism_check(detection.id, text, filename, user_id)
 
+    response_payload = {
+        key: value
+        for key, value in pangram_response.items()
+        if key != 'text'
+    }
+    response_payload.update({
+        'headline': pangram_response.get('headline'),
+        'ai_likelihood': detection.ai_likelihood,
+        'max_ai_likelihood': detection.max_ai_likelihood,
+        'avg_ai_likelihood': detection.avg_ai_likelihood,
+        'prediction': detection.prediction,
+        'prediction_short': pangram_response.get('prediction_short'),
+        'fraction_ai_content': detection.fraction_ai_content,
+        'fraction_ai': pangram_response.get('fraction_ai'),
+        'fraction_ai_assisted': pangram_response.get('fraction_ai_assisted'),
+        'fraction_human': pangram_response.get('fraction_human'),
+        'llm_prediction': pangram_response.get('llm_prediction') or {},
+        'llm_prediction_ai_likelihood': pangram_response.get('llm_prediction_ai_likelihood'),
+        'llm_prediction_label': pangram_response.get('llm_prediction_label'),
+        'llm_prediction_request_id': pangram_response.get('llm_prediction_request_id'),
+        'llm_prediction_source': pangram_response.get('llm_prediction_source'),
+        'windows': pangram_response.get('windows') or [],
+    })
+
     response_data = {
         'detection_id': detection.id,
         'filename': detection.filename,
         'file_type': detection.file_type,
         'text_length': detection.text_length,
         'api_endpoint_used': detection.api_endpoint,
-        'pangram_response': {
-            'headline': pangram_response.get('headline'),
-            'ai_likelihood': detection.ai_likelihood,
-            'max_ai_likelihood': detection.max_ai_likelihood,
-            'avg_ai_likelihood': detection.avg_ai_likelihood,
-            'prediction': detection.prediction,
-            'prediction_short': pangram_response.get('prediction_short'),
-            'fraction_ai_content': detection.fraction_ai_content,
-            'fraction_ai': pangram_response.get('fraction_ai'),
-            'fraction_ai_assisted': pangram_response.get('fraction_ai_assisted'),
-            'fraction_human': pangram_response.get('fraction_human'),
-            'llm_prediction': pangram_response.get('llm_prediction') or {},
-            'llm_prediction_ai_likelihood': pangram_response.get('llm_prediction_ai_likelihood'),
-            'llm_prediction_label': pangram_response.get('llm_prediction_label'),
-            'llm_prediction_request_id': pangram_response.get('llm_prediction_request_id'),
-            'llm_prediction_source': pangram_response.get('llm_prediction_source'),
-            'windows': pangram_response.get('windows') or [],
-        },
+        'pangram_response': response_payload,
     }
 
     if plagiarism_report:

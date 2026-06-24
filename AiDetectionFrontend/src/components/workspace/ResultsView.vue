@@ -32,6 +32,37 @@
       </div>
     </section>
 
+    <section v-if="response" class="va-card model-card">
+      <header class="section-header model-card__header">
+        <div class="section-header__left">
+          <span class="section-label">Модель проверки</span>
+          <span class="va-chip mixed">
+            <span class="va-dot mixed" />
+            {{ analysisModeLabel }}
+          </span>
+        </div>
+      </header>
+
+      <div class="model-card__body">
+        <div class="model-card__main">
+          <p class="model-card__name">{{ modelDisplayName }}</p>
+          <p class="model-card__description">{{ modelDescription }}</p>
+        </div>
+
+        <div class="model-card__facts">
+          <span>Провайдер: {{ providerLabel }}</span>
+          <span v-if="modelBaseLabel">База: {{ modelBaseLabel }}</span>
+          <span v-if="confidenceLabel">Уверенность: {{ confidenceLabel }}</span>
+        </div>
+
+        <div v-if="metricChips.length" class="model-card__metrics">
+          <span v-for="metric in metricChips" :key="metric.label" class="model-card__metric">
+            {{ metric.label }} <strong>{{ metric.value }}</strong>
+          </span>
+        </div>
+      </div>
+    </section>
+
     <LlmPredictionCard
       :prediction="response?.llm_prediction"
       :label="response?.llm_prediction_label"
@@ -178,6 +209,44 @@ const aiProb = computed(() => distribution.value.ai)
 const humanProb = computed(() => distribution.value.human)
 const uncertainProb = computed(() => distribution.value.uncertain)
 const windows = computed(() => response.value?.windows ?? [])
+const isLocalModel = computed(() => response.value?.provider === 'local' || response.value?.analysis_mode === 'local')
+const providerLabel = computed(() =>
+  response.value?.provider_label || (isLocalModel.value ? 'Локальная модель' : 'Облачная проверка'),
+)
+const analysisModeLabel = computed(() => {
+  if (response.value?.analysis_mode_label) return response.value.analysis_mode_label
+  if (isLocalModel.value) return 'Обычная проверка'
+  return props.detailed ? 'Расширенная проверка' : 'Быстрая проверка'
+})
+const modelDisplayName = computed(() => {
+  if (response.value?.model_display_name) return response.value.model_display_name
+  if (isLocalModel.value) return 'Локальная модель'
+  return props.detailed ? 'Облачная проверка, расширенный режим' : 'Облачная проверка'
+})
+const modelDescription = computed(() => {
+  if (response.value?.model_description) return response.value.model_description
+  if (isLocalModel.value) {
+    return 'Пилотная локальная модель: возвращает вероятность ИИ/человек без посегментной разметки.'
+  }
+  return props.detailed
+    ? 'Внешний детектор с посегментной разметкой, вероятными LLM-моделями и общим скорингом.'
+    : 'Внешний детектор с быстрым общим скорингом вероятности ИИ без подробной модельной атрибуции.'
+})
+const modelBaseLabel = computed(() => response.value?.model_base || '')
+const confidenceLabel = computed(() => localizeConfidence(response.value?.confidence))
+const metricChips = computed(() => {
+  const metrics = response.value?.local_model_metrics || {}
+  const labels: Record<string, string> = {
+    accuracy: 'Accuracy',
+    precision: 'Precision',
+    recall: 'Recall',
+    f1: 'F1',
+  }
+
+  return Object.entries(labels)
+    .map(([key, label]) => ({ label, value: formatMetric(metrics[key]) }))
+    .filter((item) => item.value)
+})
 
 const plagiarism = computed(() => props.detection?.plagiarism_report ?? null)
 const plagiarismPending = computed(() =>
@@ -189,6 +258,24 @@ const plagiarismPct = computed(() =>
 const topSimilarDocuments = computed(() => plagiarism.value?.similar_documents.slice(0, 3) ?? [])
 
 const verdict = computed(() => resolveVerdict(response.value))
+
+const formatMetric = (value: unknown) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return ''
+  if (value >= 0 && value <= 1) return `${Math.round(value * 100)}%`
+  return value.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+}
+
+const localizeConfidence = (value?: string) => {
+  const normalized = (value || '').toLowerCase()
+  const labels: Record<string, string> = {
+    high_ai: 'высокая, ИИ',
+    medium_ai: 'средняя, ИИ',
+    uncertain: 'неопределённо',
+    medium_human: 'средняя, человек',
+    high_human: 'высокая, человек',
+  }
+  return labels[normalized] || ''
+}
 
 const verdictText = computed(() => {
   if (response.value?.headline?.trim()) return localizePredictionText(response.value.headline)
@@ -207,6 +294,7 @@ const copied = ref(false)
 const copyResult = async () => {
   const summary = [
     `Вердикт: ${verdictText.value}`,
+    `Модель: ${modelDisplayName.value} (${analysisModeLabel.value})`,
     `Вероятность ИИ: ${Math.round(aiProb.value * 100)}%`,
     `Человек: ${Math.round(humanProb.value * 100)}%`,
     `Неопределённо: ${Math.round(uncertainProb.value * 100)}%`,
@@ -308,6 +396,54 @@ const segmentTitle = (windowItem: WindowData) =>
   display: grid;
   gap: 10px;
   grid-template-columns: 1fr 1fr 1fr;
+}
+
+.model-card {
+  padding: 18px;
+}
+
+.model-card__header {
+  margin-bottom: 10px;
+}
+
+.model-card__body {
+  display: grid;
+  gap: 10px;
+}
+
+.model-card__name {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.model-card__description {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.model-card__facts,
+.model-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.model-card__facts span,
+.model-card__metric {
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+}
+
+.model-card__metric strong {
+  color: var(--ink);
+  margin-left: 4px;
 }
 
 .segment-card {

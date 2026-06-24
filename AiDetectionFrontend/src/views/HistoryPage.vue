@@ -229,11 +229,13 @@ const fileTypeClass = (value?: string) => {
 
 const checkModeLabel = (apiEndpoint?: string) => {
   const value = (apiEndpoint || '').toLowerCase()
+  if (value === 'local_rubert_tiny2') return 'Локальная'
   return value === 'v3_detailed' ? 'Расширенная' : 'Быстрая'
 }
 
 const checkModeClass = (apiEndpoint?: string) => {
   const value = (apiEndpoint || '').toLowerCase()
+  if (value === 'local_rubert_tiny2') return 'check-mode-chip--local'
   return value === 'v3_detailed' ? 'check-mode-chip--extended' : 'check-mode-chip--quick'
 }
 
@@ -569,6 +571,11 @@ onMounted(() => {
 .check-mode-chip--extended {
   background: #e6f3ec;
   color: #2f6b49;
+}
+
+.check-mode-chip--local {
+  background: #e8eef8;
+  color: #2d4c7a;
 }
 
 .row-word-count {

@@ -9,6 +9,7 @@ import type {
   StatsResponse,
   APIError,
   HistoryFilters,
+  AnalysisProvider,
 } from '../types/api'
 
 export const useAIDetectionStore = defineStore('aiDetection', () => {
@@ -55,10 +56,14 @@ export const useAIDetectionStore = defineStore('aiDetection', () => {
   }
 
   // Анализ текста
-  const analyzeText = async (text: string, detailedAnalysis: boolean = false): Promise<AnalyzeResponse | null> => {
+  const analyzeText = async (
+    text: string,
+    detailedAnalysis: boolean = false,
+    analysisProvider: AnalysisProvider = 'pangram',
+  ): Promise<AnalyzeResponse | null> => {
     try {
       setLoading(true)
-      const result = await aiDetectionAPI.analyzeText(text, detailedAnalysis)
+      const result = await aiDetectionAPI.analyzeText(text, detailedAnalysis, analysisProvider)
       return result
     } catch (err) {
       handleError(err)
@@ -69,10 +74,14 @@ export const useAIDetectionStore = defineStore('aiDetection', () => {
   }
 
   // Загрузка файла
-  const uploadFile = async (file: File, detailedAnalysis: boolean = false): Promise<AnalyzeResponse | null> => {
+  const uploadFile = async (
+    file: File,
+    detailedAnalysis: boolean = false,
+    analysisProvider: AnalysisProvider = 'pangram',
+  ): Promise<AnalyzeResponse | null> => {
     try {
       setLoading(true)
-      const result = await aiDetectionAPI.uploadFile(file, detailedAnalysis)
+      const result = await aiDetectionAPI.uploadFile(file, detailedAnalysis, analysisProvider)
       return result
     } catch (err) {
       handleError(err)

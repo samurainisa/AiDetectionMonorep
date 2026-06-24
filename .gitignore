@@ -40,6 +40,11 @@ AiDetectionKemsu/AiDetectionBackend/training/
 AiDetectionKemsu/AiDetectionBackend/models/*.bin
 AiDetectionKemsu/AiDetectionBackend/models/*.pt
 AiDetectionKemsu/AiDetectionBackend/models/*.safetensors
+AiDetectionML/train.jsonl
+AiDetectionML/valid.jsonl
+AiDetectionML/test.jsonl
+AiDetectionML/data/
+AiDetectionML/artifacts/
 
 # ===== Node / фронтенд =====
 node_modules/

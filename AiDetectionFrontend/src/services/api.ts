@@ -9,6 +9,7 @@ import type {
   APIError,
   AllowedFileType,
   HistoryFilters,
+  AnalysisProvider,
 } from '../types/api'
 
 // Конфигурация API
@@ -87,16 +88,25 @@ export const getAILikelihoodColor = (likelihood?: number): string => {
 // API класс
 export class AIDetectionAPI {
   // Анализ текста
-  async analyzeText(text: string, detailedAnalysis: boolean = false): Promise<AnalyzeResponse> {
+  async analyzeText(
+    text: string,
+    detailedAnalysis: boolean = false,
+    analysisProvider: AnalysisProvider = 'pangram',
+  ): Promise<AnalyzeResponse> {
     const response = await api.post<AnalyzeResponse>('/analyze-text', {
       text,
       detailed_analysis: detailedAnalysis,
+      analysis_provider: analysisProvider,
     })
     return response.data
   }
 
   // Загрузка и анализ файла
-  async uploadFile(file: File, detailedAnalysis: boolean = false): Promise<AnalyzeResponse> {
+  async uploadFile(
+    file: File,
+    detailedAnalysis: boolean = false,
+    analysisProvider: AnalysisProvider = 'pangram',
+  ): Promise<AnalyzeResponse> {
     if (!isValidFileType(file)) {
       throw new Error(`Неподдерживаемый тип файла. Разрешены: ${ALLOWED_FILE_TYPES.join(', ')}`)
     }
@@ -104,6 +114,7 @@ export class AIDetectionAPI {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('detailed_analysis', detailedAnalysis.toString())
+    formData.append('analysis_provider', analysisProvider)
 
     const response = await api.post<AnalyzeResponse>('/upload', formData, {
       headers: {

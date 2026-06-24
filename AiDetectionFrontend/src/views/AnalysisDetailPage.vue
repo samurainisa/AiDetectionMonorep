@@ -182,7 +182,42 @@
           <div v-if="tab === 'graph'" class="panel-scroll va-scroll">
             <template v-if="det.text_features">
               <div v-if="det.full_response" class="va-card metrics-card">
-                <div class="panel-caption panel-caption--normal">Сводка Pangram</div>
+                <div class="panel-caption panel-caption--normal">Модель проверки</div>
+
+                <div class="feature-list">
+                  <div class="feature-row">
+                    <span class="feature-row__label">Провайдер</span>
+                    <span class="feature-row__value">{{ detailProviderLabel }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Режим</span>
+                    <span class="feature-row__value">{{ detailModeLabel }}</span>
+                  </div>
+                  <div class="feature-row">
+                    <span class="feature-row__label">Модель</span>
+                    <span class="feature-row__value">{{ detailModelName }}</span>
+                  </div>
+                  <div v-if="det.full_response.model_base" class="feature-row">
+                    <span class="feature-row__label">Базовая архитектура</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.model_base) }}</span>
+                  </div>
+                  <div v-if="detailConfidenceLabel" class="feature-row">
+                    <span class="feature-row__label">Уверенность</span>
+                    <span class="feature-row__value">{{ detailConfidenceLabel }}</span>
+                  </div>
+                  <div v-if="det.full_response.model_description" class="feature-row feature-row--stacked">
+                    <span class="feature-row__label">Описание</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.model_description) }}</span>
+                  </div>
+                  <div v-for="metric in detailModelMetrics" :key="metric.label" class="feature-row">
+                    <span class="feature-row__label">{{ metric.label }}</span>
+                    <span class="feature-row__value">{{ metric.value }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="det.full_response" class="va-card metrics-card">
+                <div class="panel-caption panel-caption--normal">Сводка анализа</div>
 
                 <div class="feature-list">
                   <div class="feature-row">
@@ -362,6 +397,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import VeritasShell from '../components/VeritasShell.vue'
 import VIcon from '../components/VIcon.vue'
@@ -443,6 +479,38 @@ const hasWindows = computed(() => Boolean(det.value?.full_response?.windows?.len
 const windows = computed<WindowData[]>(() => (det.value?.full_response?.windows as WindowData[]) ?? [])
 
 const aiSource = computed(() => det.value?.full_response ?? det.value ?? undefined)
+const isLocalModel = computed(() =>
+  det.value?.api_endpoint === 'local_rubert_tiny2' ||
+  det.value?.full_response?.provider === 'local' ||
+  det.value?.full_response?.analysis_mode === 'local',
+)
+const detailProviderLabel = computed(() =>
+  det.value?.full_response?.provider_label || (isLocalModel.value ? 'Локальная модель' : 'Облачная проверка'),
+)
+const detailModeLabel = computed(() => {
+  if (det.value?.full_response?.analysis_mode_label) return det.value.full_response.analysis_mode_label
+  if (isLocalModel.value) return 'Обычная проверка'
+  return det.value?.api_endpoint === 'v3_detailed' ? 'Расширенная проверка' : 'Быстрая проверка'
+})
+const detailModelName = computed(() => {
+  if (det.value?.full_response?.model_display_name) return det.value.full_response.model_display_name
+  if (isLocalModel.value) return 'Локальная модель'
+  return det.value?.api_endpoint === 'v3_detailed' ? 'Облачная проверка, расширенный режим' : 'Облачная проверка'
+})
+const detailConfidenceLabel = computed(() => localizeConfidence(det.value?.full_response?.confidence))
+const detailModelMetrics = computed(() => {
+  const metrics = det.value?.full_response?.local_model_metrics || {}
+  const labels: Record<string, string> = {
+    accuracy: 'Accuracy',
+    precision: 'Precision',
+    recall: 'Recall',
+    f1: 'F1',
+  }
+
+  return Object.entries(labels)
+    .map(([key, label]) => ({ label, value: formatMetric(metrics[key]) }))
+    .filter((item) => item.value)
+})
 const distribution = computed(() => resolveAiDistribution(aiSource.value))
 const aiProb = computed(() => distribution.value.ai)
 const humanProb = computed(() => distribution.value.human)
@@ -466,7 +534,7 @@ const segmentAiPercent = (windowItem: WindowData) => Math.round((windowItem.ai_l
 const segmentIndex = (windowItem: WindowData) => windows.value.indexOf(windowItem)
 const segmentIsActive = (windowItem: WindowData) => activeSeg.value === segmentIndex(windowItem)
 
-const setSegmentRef = (element: Element | null, index: number) => {
+const setSegmentRef = (element: Element | ComponentPublicInstance | null, index: number) => {
   if (element instanceof HTMLElement) {
     segmentRefs.value[index] = element
   }
@@ -503,6 +571,24 @@ const displayRounded = (value: number | null | undefined) =>
 
 const displayPercent = (value: number | null | undefined) =>
   typeof value === 'number' && Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '?'
+
+const formatMetric = (value: unknown) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return ''
+  if (value >= 0 && value <= 1) return `${Math.round(value * 100)}%`
+  return value.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+}
+
+const localizeConfidence = (value?: string) => {
+  const normalized = (value || '').toLowerCase()
+  const labels: Record<string, string> = {
+    high_ai: 'высокая, ИИ',
+    medium_ai: 'средняя, ИИ',
+    uncertain: 'неопределённо',
+    medium_human: 'средняя, человек',
+    high_human: 'высокая, человек',
+  }
+  return labels[normalized] || ''
+}
 
 const fmtDate = (value: string) => formatRuDate(value)
 
@@ -920,6 +1006,18 @@ onMounted(async () => {
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.feature-row--stacked {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feature-row--stacked .feature-row__value {
+  max-width: none;
+  text-align: left;
+  white-space: normal;
 }
 
 .graph-empty {

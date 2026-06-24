@@ -54,7 +54,11 @@ const aiColor = computed(() => {
 const title = computed(() => displayDocumentName(props.item.filename, props.item.file_type))
 
 const fileType = computed(() => (props.item.file_type || 'text').toUpperCase())
-const modeLabel = computed(() => ((props.item.api_endpoint || '').toLowerCase() === 'v3_detailed' ? 'Расширенная' : 'Быстрая'))
+const modeLabel = computed(() => {
+  const endpoint = (props.item.api_endpoint || '').toLowerCase()
+  if (endpoint === 'local_rubert_tiny2') return 'Локальная'
+  return endpoint === 'v3_detailed' ? 'Расширенная' : 'Быстрая'
+})
 const words = computed(() => props.item.text_length?.toLocaleString('ru') || '0')
 const fmtDate = (value: string) => formatRuDate(value)
 </script>

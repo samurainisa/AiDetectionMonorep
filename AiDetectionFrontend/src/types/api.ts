@@ -4,8 +4,12 @@ export interface APIError {
 }
 
 // Request payloads
+export type AnalysisProvider = 'pangram' | 'local'
+
 export interface AnalyzeTextRequest {
   text: string
+  analysis_provider?: AnalysisProvider
+  detailed_analysis?: boolean
 }
 
 export interface AnalyzeBatchRequest {
@@ -44,9 +48,9 @@ export interface PangramResponse {
   fraction_ai?: number
   fraction_ai_assisted?: number
   fraction_human?: number
-  num_ai_segments?: number
-  num_ai_assisted_segments?: number
-  num_human_segments?: number
+  num_ai_segments?: number | null
+  num_ai_assisted_segments?: number | null
+  num_human_segments?: number | null
   dashboard_link?: string
 
   windows?: WindowData[]
@@ -55,6 +59,19 @@ export interface PangramResponse {
   llm_prediction_label?: string
   llm_prediction_request_id?: string
   llm_prediction_source?: string
+
+  provider?: AnalysisProvider | string
+  provider_label?: string
+  analysis_mode?: string
+  analysis_mode_label?: string
+  model_name?: string
+  model_display_name?: string
+  model_base?: string
+  model_description?: string
+  confidence?: string
+  local_model_response?: Record<string, unknown>
+  local_model_metrics?: Record<string, number>
+  limitations?: string[]
 }
 
 // Main analysis responses

@@ -1,0 +1,26 @@
+model_name: cointegrated/rubert-tiny2
+output_dir: models/rubert_tiny2_ai_detector
+
+data:
+  train_path: data/processed/train_ru.jsonl
+  valid_path: data/processed/valid_ru.jsonl
+  test_path: data/processed/test_ru.jsonl
+  min_text_chars: 200
+  max_train_per_class: 3000
+  max_valid_per_class: 500
+  max_test_per_class: 500
+
+training:
+  max_length: 512
+  num_train_epochs: 1
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  learning_rate: 0.00002
+  weight_decay: 0.01
+  seed: 42
+  fp16: false
+
+labels:
+  human: 0
+  ai: 1
+
