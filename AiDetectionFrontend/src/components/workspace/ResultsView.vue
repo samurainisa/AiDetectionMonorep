@@ -53,6 +53,10 @@
           <span>Провайдер: {{ providerLabel }}</span>
           <span v-if="modelBaseLabel">База: {{ modelBaseLabel }}</span>
           <span v-if="confidenceLabel">Уверенность: {{ confidenceLabel }}</span>
+          <span v-if="windowCountLabel">Окон: {{ windowCountLabel }}</span>
+          <span v-if="windowTokenLabel">Окно: {{ windowTokenLabel }} токенов</span>
+          <span v-if="windowOverlapLabel">Перекрытие: {{ windowOverlapLabel }} токенов</span>
+          <span v-if="response?.input_truncated">Текст был обрезан до лимита</span>
         </div>
 
         <div v-if="metricChips.length" class="model-card__metrics">
@@ -235,6 +239,17 @@ const modelDescription = computed(() => {
 })
 const modelBaseLabel = computed(() => response.value?.model_base || '')
 const confidenceLabel = computed(() => localizeConfidence(response.value?.confidence))
+const windowCountLabel = computed(() =>
+  typeof response.value?.window_count === 'number' ? response.value.window_count.toLocaleString('ru-RU') : '',
+)
+const windowTokenLabel = computed(() =>
+  typeof response.value?.window_token_limit === 'number' ? response.value.window_token_limit.toLocaleString('ru-RU') : '',
+)
+const windowOverlapLabel = computed(() =>
+  typeof response.value?.window_overlap_tokens === 'number'
+    ? response.value.window_overlap_tokens.toLocaleString('ru-RU')
+    : '',
+)
 const metricChips = computed(() => {
   const metrics = response.value?.local_model_metrics || {}
   const labels: Record<string, string> = {

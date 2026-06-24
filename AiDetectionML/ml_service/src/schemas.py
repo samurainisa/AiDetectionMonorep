@@ -54,3 +54,5 @@ class ModelInfoResponse(BaseModel):
     task: str
     labels: dict[str, str]
     metrics: dict
+    window_token_limit: int | None = None
+    window_overlap_tokens: int | None = None

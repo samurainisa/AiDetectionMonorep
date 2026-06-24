@@ -205,6 +205,26 @@
                     <span class="feature-row__label">Уверенность</span>
                     <span class="feature-row__value">{{ detailConfidenceLabel }}</span>
                   </div>
+                  <div v-if="det.full_response.window_count != null" class="feature-row">
+                    <span class="feature-row__label">Окон анализа</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.window_count) }}</span>
+                  </div>
+                  <div v-if="det.full_response.window_token_limit != null" class="feature-row">
+                    <span class="feature-row__label">Токенов в окне</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.window_token_limit) }}</span>
+                  </div>
+                  <div v-if="det.full_response.window_overlap_tokens != null" class="feature-row">
+                    <span class="feature-row__label">Перекрытие окон</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.window_overlap_tokens) }}</span>
+                  </div>
+                  <div v-if="det.full_response.analyzed_char_count != null" class="feature-row">
+                    <span class="feature-row__label">Проанализировано символов</span>
+                    <span class="feature-row__value">{{ displayValue(det.full_response.analyzed_char_count) }}</span>
+                  </div>
+                  <div v-if="det.full_response.input_truncated" class="feature-row">
+                    <span class="feature-row__label">Лимит текста</span>
+                    <span class="feature-row__value">Текст был обрезан</span>
+                  </div>
                   <div v-if="det.full_response.model_description" class="feature-row feature-row--stacked">
                     <span class="feature-row__label">Описание</span>
                     <span class="feature-row__value">{{ displayValue(det.full_response.model_description) }}</span>
