@@ -227,7 +227,7 @@ const modelDisplayName = computed(() => {
 const modelDescription = computed(() => {
   if (response.value?.model_description) return response.value.model_description
   if (isLocalModel.value) {
-    return 'Пилотная локальная модель: возвращает вероятность ИИ/человек без посегментной разметки.'
+    return 'Пилотная локальная модель: анализирует длинный текст окнами, показывает общий результат и вероятности по фрагментам.'
   }
   return props.detailed
     ? 'Внешний детектор с посегментной разметкой, вероятными LLM-моделями и общим скорингом.'

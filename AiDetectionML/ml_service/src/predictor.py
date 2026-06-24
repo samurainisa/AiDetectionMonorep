@@ -185,6 +185,7 @@ class LocalAiDetector:
                 add_special_tokens=False,
                 return_offsets_mapping=True,
                 truncation=False,
+                verbose=False,
             )
             token_ids = list(encoding["input_ids"])
             offsets = list(encoding["offset_mapping"])
