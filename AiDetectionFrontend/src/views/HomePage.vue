@@ -389,7 +389,7 @@ const runAnalysis = async () => {
     } else {
       result.value = await aiDetectionAPI.uploadFile(uploadedFile.value as File, detailed, provider.value)
     }
-    resultDetailed.value = detailed
+    resultDetailed.value = detailed || provider.value === 'local'
     hasResult.value = true
   } catch (error: unknown) {
     const apiError = error as { error?: string } | null

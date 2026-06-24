@@ -71,6 +71,11 @@ export interface PangramResponse {
   confidence?: string
   local_model_response?: Record<string, unknown>
   local_model_metrics?: Record<string, number>
+  window_count?: number
+  window_token_limit?: number
+  window_overlap_tokens?: number
+  analyzed_char_count?: number
+  input_truncated?: boolean
   limitations?: string[]
 }
 

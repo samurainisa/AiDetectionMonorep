@@ -5,7 +5,7 @@ import re
 from typing import Any
 
 
-MAX_TEXT_LENGTH = int(os.getenv("MAX_TEXT_LENGTH", "20000"))
+MAX_TEXT_LENGTH = int(os.getenv("MAX_TEXT_LENGTH", "200000"))
 
 
 def preprocess_text(value: Any, max_length: int = MAX_TEXT_LENGTH) -> str:
@@ -16,4 +16,3 @@ def preprocess_text(value: Any, max_length: int = MAX_TEXT_LENGTH) -> str:
     text = "\n".join(lines)
     text = re.sub(r"[ \t]+", " ", text).strip()
     return text[:max_length]
-

@@ -71,7 +71,7 @@
       :request-id="response?.llm_prediction_request_id"
     />
 
-    <section v-if="detailed" class="va-card segment-card">
+    <section v-if="showSegments" class="va-card segment-card">
       <header class="section-header segment-card__header">
         <div class="section-header__left">
           <span class="section-label">Посегментная разметка</span>
@@ -209,6 +209,7 @@ const aiProb = computed(() => distribution.value.ai)
 const humanProb = computed(() => distribution.value.human)
 const uncertainProb = computed(() => distribution.value.uncertain)
 const windows = computed(() => response.value?.windows ?? [])
+const showSegments = computed(() => props.detailed || windows.value.length > 0)
 const isLocalModel = computed(() => response.value?.provider === 'local' || response.value?.analysis_mode === 'local')
 const providerLabel = computed(() =>
   response.value?.provider_label || (isLocalModel.value ? 'Локальная модель' : 'Облачная проверка'),

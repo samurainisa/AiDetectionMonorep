@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
     environment:
       MODEL_DIR: /app/models/rubert_tiny2_ai_detector
-      MAX_TEXT_LENGTH: ${ML_MAX_TEXT_LENGTH:-20000}
+      MAX_TEXT_LENGTH: ${ML_MAX_TEXT_LENGTH:-200000}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)\""]
       interval: 15s
