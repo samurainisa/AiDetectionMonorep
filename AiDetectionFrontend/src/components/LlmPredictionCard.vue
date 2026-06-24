@@ -3,7 +3,7 @@
     <header class="llm-prediction-card__header">
       <div>
         <p class="llm-prediction-card__eyebrow">Вероятные модели</p>
-        <h3 class="llm-prediction-card__title">Модельный след</h3>
+        <h3 class="llm-prediction-card__title">Атрибуция модели</h3>
       </div>
       <span class="llm-prediction-card__top" :class="{ 'llm-prediction-card__top--muted': !hasConfidentMatch }">
         {{ topLabel }}
@@ -17,9 +17,13 @@
     </div>
 
     <div v-if="label || aiLikelihood != null" class="llm-prediction-card__summary">
-      <span v-if="label">{{ label }}</span>
-      <span v-if="aiLikelihood != null" class="tnum">{{ formatScore(aiLikelihood) }} ИИ</span>
+      <span v-if="label">{{ localizedLabel }}</span>
+      <span v-if="aiLikelihood != null" class="tnum">{{ formatScore(aiLikelihood) }} след</span>
     </div>
+
+    <p class="llm-prediction-card__note">
+      Отдельный модельный поиск: показывает, на какую LLM похож текст. Это не доля ИИ в документе.
+    </p>
 
     <p v-if="requestId" class="llm-prediction-card__request">ID запроса: {{ requestId }}</p>
 
@@ -39,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { localizePredictionText } from '../utils/aiResult'
 
 const props = defineProps<{
   prediction?: Record<string, number>
@@ -81,7 +86,8 @@ const entries = computed(() =>
 const topScore = computed(() => entries.value[0]?.score ?? 0)
 const hasConfidentMatch = computed(() => topScore.value >= 0.001)
 const topLabel = computed(() => (hasConfidentMatch.value ? entries.value[0]?.label : 'Нет уверенного следа'))
-const endpointLabel = computed(() => (props.source?.includes('pangramlabs') ? 'Модельный endpoint' : 'Атрибуция моделей'))
+const endpointLabel = computed(() => (props.source?.includes('pangramlabs') ? 'Отдельный endpoint' : 'Атрибуция моделей'))
+const localizedLabel = computed(() => localizePredictionText(props.label) || props.label)
 
 const formatScore = (value: number) => {
   if (value > 0 && value < 0.001) return '<0,1%'
@@ -181,6 +187,13 @@ const formatScore = (value: number) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.llm-prediction-card__note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: -4px 0 0;
 }
 
 .llm-prediction-card__list {

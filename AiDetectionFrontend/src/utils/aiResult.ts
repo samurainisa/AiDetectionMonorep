@@ -56,6 +56,9 @@ export const localizePredictionText = (value?: string): string => {
   const normalized = normalizeText(source)
 
   const headlineTranslations: Record<string, string> = {
+    'highly likely ai': 'Высокая вероятность модельного следа ИИ',
+    'likely ai': 'Вероятен модельный след ИИ',
+    'unlikely ai': 'Модельный след ИИ маловероятен',
     'mostly human, ai detected': 'В основном человек, обнаружен ИИ',
     'human written': 'Написано человеком',
     'human-written': 'Написано человеком',

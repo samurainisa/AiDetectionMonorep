@@ -285,10 +285,10 @@
                 <div class="feature-list">
                   <div class="feature-row">
                     <span class="feature-row__label">Вердикт модельного поиска</span>
-                    <span class="feature-row__value">{{ displayValue(det.full_response.llm_prediction_label) }}</span>
+                    <span class="feature-row__value">{{ displayModelAttributionLabel(det.full_response.llm_prediction_label) }}</span>
                   </div>
                   <div class="feature-row">
-                    <span class="feature-row__label">Вероятность ИИ по модельному поиску</span>
+                    <span class="feature-row__label">Вероятность модельного следа</span>
                     <span class="feature-row__value">{{ displayPercent(det.full_response.llm_prediction_ai_likelihood) }}</span>
                   </div>
                   <div class="feature-row">
@@ -431,6 +431,7 @@ import type { DetectionDetail, WindowData } from '../types/api'
 import { displayDocumentName } from '../utils/display'
 import {
   formatRuDate,
+  localizePredictionText,
   resolveAiDistribution,
   resolveVerdict,
   segmentVerdictClass,
@@ -584,6 +585,11 @@ const segmentItemStyle = (windowItem: WindowData) => {
 const displayValue = (value: number | string | null | undefined) => {
   if (value === null || value === undefined || value === '') return '?'
   return String(value)
+}
+
+const displayModelAttributionLabel = (value: string | null | undefined) => {
+  const localized = localizePredictionText(value || '')
+  return localized || displayValue(value)
 }
 
 const displayRounded = (value: number | null | undefined) =>
