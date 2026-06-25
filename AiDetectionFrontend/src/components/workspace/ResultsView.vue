@@ -294,17 +294,28 @@ const localizeConfidence = (value?: string) => {
 }
 
 const verdictText = computed(() => {
+  if (isLocalModel.value) {
+    if (verdict.value === 'ai') return 'Высокая вероятность ИИ-генерации'
+    if (verdict.value === 'human') return 'Текст вероятно написан человеком'
+    return 'Результат локальной модели неоднозначный'
+  }
+
   if (response.value?.headline?.trim()) return localizePredictionText(response.value.headline)
   if (verdict.value === 'ai') return 'Высокая вероятность генерации ИИ'
   if (verdict.value === 'human') return 'Текст написан человеком'
   return 'Вероятно, часть текста сгенерирована ИИ'
 })
 
-const verdictDescription = computed(
-  () =>
+const verdictDescription = computed(() => {
+  if (isLocalModel.value) {
+    return 'Локальная модель возвращает вероятность ИИ-генерации по тексту. Проценты в круге показывают эту вероятность, а не долю сегментов документа.'
+  }
+
+  return (
     localizePredictionText(response.value?.prediction) ||
-    'Мы выделили фрагменты с высокой вероятностью ИИ, пройдитесь по тексту и оцените их вручную.',
-)
+    'Мы выделили фрагменты с высокой вероятностью ИИ, пройдитесь по тексту и оцените их вручную.'
+  )
+})
 
 const copied = ref(false)
 const copyResult = async () => {

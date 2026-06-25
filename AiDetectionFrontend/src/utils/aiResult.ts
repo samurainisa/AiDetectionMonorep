@@ -6,6 +6,7 @@ type AiResultSource = Partial<
   Pick<
     PangramResponse,
     | 'ai_likelihood'
+    | 'avg_ai_likelihood'
     | 'fraction_ai_content'
     | 'fraction_ai'
     | 'fraction_human'
@@ -13,6 +14,8 @@ type AiResultSource = Partial<
     | 'prediction'
     | 'prediction_short'
     | 'headline'
+    | 'provider'
+    | 'analysis_mode'
   >
 >
 
@@ -29,6 +32,12 @@ const firstProbability = (...values: Array<number | null | undefined>): number |
 }
 
 const normalizeText = (value?: string) => (value || '').toLowerCase().trim()
+
+const isLocalSource = (source?: AiResultSource) =>
+  source?.provider === 'local' || normalizeText(source?.analysis_mode).startsWith('local')
+
+const localAiProbability = (source?: AiResultSource) =>
+  firstProbability(source?.avg_ai_likelihood, source?.ai_likelihood, source?.fraction_ai, source?.fraction_ai_content) ?? 0
 
 const predictionTranslations: Array<{ match: string; ru: string }> = [
   {
@@ -139,6 +148,13 @@ const verdictFromShort = (value?: string): Verdict | undefined => {
 }
 
 export const resolveVerdict = (source?: AiResultSource): Verdict => {
+  if (isLocalSource(source)) {
+    const aiLikelihood = localAiProbability(source)
+    if (aiLikelihood >= 0.66) return 'ai'
+    if (aiLikelihood <= 0.34) return 'human'
+    return 'mixed'
+  }
+
   const byShort = verdictFromShort(source?.prediction_short)
   if (byShort) return byShort
 
@@ -156,6 +172,15 @@ export const resolveVerdict = (source?: AiResultSource): Verdict => {
 }
 
 export const resolveAiDistribution = (source?: AiResultSource) => {
+  if (isLocalSource(source)) {
+    const ai = localAiProbability(source)
+    return {
+      ai,
+      human: clamp01(1 - ai),
+      uncertain: 0,
+    }
+  }
+
   const ai = firstProbability(source?.fraction_ai_content, source?.fraction_ai, source?.ai_likelihood) ?? 0
   const assisted = firstProbability(source?.fraction_ai_assisted)
   const human = firstProbability(source?.fraction_human)

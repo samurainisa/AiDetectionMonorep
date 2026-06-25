@@ -246,15 +246,15 @@
                   </div>
                   <div class="feature-row">
                     <span class="feature-row__label">ИИ-сгенерированный текст</span>
-                    <span class="feature-row__value">{{ displayPercent(det.full_response.fraction_ai) }}</span>
+                    <span class="feature-row__value">{{ displayPercent(summaryAiValue) }}</span>
                   </div>
                   <div class="feature-row">
                     <span class="feature-row__label">ИИ-ассистированный текст</span>
-                    <span class="feature-row__value">{{ displayPercent(det.full_response.fraction_ai_assisted) }}</span>
+                    <span class="feature-row__value">{{ displayPercent(summaryAssistedValue) }}</span>
                   </div>
                   <div class="feature-row">
                     <span class="feature-row__label">Человеческий текст</span>
-                    <span class="feature-row__value">{{ displayPercent(det.full_response.fraction_human) }}</span>
+                    <span class="feature-row__value">{{ displayPercent(summaryHumanValue) }}</span>
                   </div>
                   <div class="feature-row">
                     <span class="feature-row__label">Средняя вероятность ИИ</span>
@@ -537,6 +537,11 @@ const aiProb = computed(() => distribution.value.ai)
 const humanProb = computed(() => distribution.value.human)
 const uncertainProb = computed(() => distribution.value.uncertain)
 const verdict = computed(() => resolveVerdict(aiSource.value))
+const summaryAiValue = computed(() => (isLocalModel.value ? aiProb.value : det.value?.full_response?.fraction_ai))
+const summaryAssistedValue = computed(() =>
+  isLocalModel.value ? uncertainProb.value : det.value?.full_response?.fraction_ai_assisted,
+)
+const summaryHumanValue = computed(() => (isLocalModel.value ? humanProb.value : det.value?.full_response?.fraction_human))
 
 const filteredWindows = computed(() => {
   if (segFilter.value === 'all') return windows.value

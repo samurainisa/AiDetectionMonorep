@@ -31,7 +31,7 @@ def analyze_text_local(text: str) -> dict[str, Any]:
     ai_probability = _as_probability(prediction.get("ai_probability"))
     avg_ai_likelihood = _as_probability(prediction.get("avg_ai_likelihood", ai_probability))
     max_ai_likelihood = _as_probability(prediction.get("max_ai_likelihood", ai_probability))
-    fraction_ai_content = _as_probability(prediction.get("fraction_ai_content", ai_probability))
+    local_window_ai_content = _as_probability(prediction.get("fraction_ai_content", ai_probability))
     human_probability = _as_probability(prediction.get("human_probability", 1.0 - avg_ai_likelihood))
     windows = _normalize_windows(prediction.get("windows"))
     label = str(prediction.get("label") or ("ai" if ai_probability >= 0.5 else "human")).lower()
@@ -51,9 +51,10 @@ def analyze_text_local(text: str) -> dict[str, Any]:
         "avg_ai_likelihood": avg_ai_likelihood,
         "max_ai_likelihood": max_ai_likelihood,
         "fraction_ai": avg_ai_likelihood,
-        "fraction_ai_content": fraction_ai_content,
+        "fraction_ai_content": avg_ai_likelihood,
         "fraction_ai_assisted": 0.0,
-        "fraction_human": max(0.0, min(1.0, 1.0 - fraction_ai_content)),
+        "fraction_human": max(0.0, min(1.0, 1.0 - avg_ai_likelihood)),
+        "local_window_ai_content": local_window_ai_content,
         "num_ai_segments": prediction.get("num_ai_segments"),
         "num_ai_assisted_segments": prediction.get("num_uncertain_segments"),
         "num_human_segments": prediction.get("num_human_segments"),

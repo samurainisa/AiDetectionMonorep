@@ -44,6 +44,7 @@ export interface PangramResponse {
   max_ai_likelihood?: number
   avg_ai_likelihood?: number
   fraction_ai_content?: number
+  local_window_ai_content?: number
 
   fraction_ai?: number
   fraction_ai_assisted?: number

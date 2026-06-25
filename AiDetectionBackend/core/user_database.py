@@ -43,12 +43,14 @@ class DetectionModel(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    original_detection_id = db.Column(db.Integer, nullable=False)  # ссылка на Detection из старой таблицы
+    original_detection_id = db.Column(db.Integer, db.ForeignKey('detection.id'), nullable=False, index=True)
     document_category = db.Column(db.String(50), nullable=True)
     assignment_name = db.Column(db.String(200), nullable=True)
     subject = db.Column(db.String(100), nullable=True)
     is_public = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    original_detection = db.relationship('Detection', backref='user_detection_links', lazy=True)
 
 # Класс для работы с пользователями
 class UserDB:

@@ -1,5 +1,5 @@
 <template>
-  <section v-if="entries.length" class="va-card llm-prediction-card">
+  <section v-if="rawEntries.length" class="va-card llm-prediction-card">
     <header class="llm-prediction-card__header">
       <div>
         <p class="llm-prediction-card__eyebrow">Вероятные модели</p>
@@ -27,8 +27,12 @@
 
     <p v-if="requestId" class="llm-prediction-card__request">ID запроса: {{ requestId }}</p>
 
-    <div class="llm-prediction-card__list">
-      <div v-for="entry in entries" :key="entry.key" class="llm-prediction-card__row">
+    <p v-if="!hasConfidentMatch" class="llm-prediction-card__empty">
+      Сервис атрибуции не нашёл уверенного следа конкретной модели. Это не означает 0% ИИ в основном результате.
+    </p>
+
+    <div v-else class="llm-prediction-card__list">
+      <div v-for="entry in visibleEntries" :key="entry.key" class="llm-prediction-card__row">
         <div class="llm-prediction-card__row-head">
           <span class="llm-prediction-card__model">{{ entry.label }}</span>
           <span class="tnum llm-prediction-card__value">{{ formatScore(entry.score) }}</span>
@@ -73,7 +77,7 @@ const clampScore = (value: unknown) => {
   return Math.min(1, Math.max(0, numeric))
 }
 
-const entries = computed(() =>
+const rawEntries = computed(() =>
   Object.entries(props.prediction ?? {})
     .map(([key, value]) => ({
       key,
@@ -83,9 +87,10 @@ const entries = computed(() =>
     .sort((left, right) => right.score - left.score),
 )
 
-const topScore = computed(() => entries.value[0]?.score ?? 0)
+const topScore = computed(() => rawEntries.value[0]?.score ?? 0)
 const hasConfidentMatch = computed(() => topScore.value >= 0.001)
-const topLabel = computed(() => (hasConfidentMatch.value ? entries.value[0]?.label : 'Нет уверенного следа'))
+const visibleEntries = computed(() => rawEntries.value.filter((entry) => entry.score >= 0.001))
+const topLabel = computed(() => (hasConfidentMatch.value ? rawEntries.value[0]?.label : 'Нет уверенного следа'))
 const endpointLabel = computed(() => (props.source?.includes('pangramlabs') ? 'Отдельный endpoint' : 'Атрибуция моделей'))
 const localizedLabel = computed(() => localizePredictionText(props.label) || props.label)
 
@@ -194,6 +199,17 @@ const formatScore = (value: number) => {
   font-size: 11px;
   line-height: 1.45;
   margin: -4px 0 0;
+}
+
+.llm-prediction-card__empty {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+  padding: 9px 10px;
 }
 
 .llm-prediction-card__list {
