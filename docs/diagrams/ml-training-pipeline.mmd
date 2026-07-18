@@ -1,0 +1,13 @@
+flowchart LR
+    dataset["Исходный датасет\nтексты Human / AI"] --> inspect["Проверка датасета\nкачество и баланс классов"]
+    inspect --> prepare["Очистка и подготовка текста\nразметка Human / AI"]
+    prepare --> split["Обучающая, проверочная\nи тестовая выборки"]
+
+    split --> tokenize["Токенизация текста\nдля RuBERT"]
+    tokenize --> train["Дообучение BERT-модели\nбинарная классификация"]
+    train --> validate["Валидация модели"]
+    validate --> metrics["Оценка качества\nAccuracy / Precision / Recall / F1"]
+
+    metrics --> saved_model["Сохраненная модель\nrubert_tiny2_ai_detector"]
+    saved_model --> ml_service["ML-сервис\nпроверка текста"]
+    ml_service --> result["Результат в системе\nHuman или AI\nвероятность ИИ"]

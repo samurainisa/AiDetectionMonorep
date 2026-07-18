@@ -1,0 +1,82 @@
+erDiagram
+    GROUPS |o--o{ USERS : "может содержать"
+    USERS |o--o{ DETECTION : "может создавать"
+    USERS ||--o{ USER_DETECTIONS : "имеет"
+    DETECTION ||--o{ USER_DETECTIONS : "имеет привязки"
+    USERS |o--o{ PLAGIARISM_CHECKS : "может запускать"
+    DETECTION ||--o{ PLAGIARISM_CHECKS : "имеет отчет"
+    DETECTION ||--o| PLAGIARISM_CORPUS : "добавляется в корпус"
+    PLAGIARISM_CORPUS ||--o{ TEXT_FRAGMENTS : "разбивается на фрагменты"
+
+    GROUPS {
+        int id PK
+        string name
+        string course_code
+        string academic_year
+        string faculty
+    }
+
+    USERS {
+        int id PK
+        string email UK
+        string password_hash
+        string first_name
+        string last_name
+        string role
+        int group_id FK
+        string student_id
+        bool is_active
+    }
+
+    DETECTION {
+        int id PK
+        int user_id FK
+        string filename
+        string file_type
+        text extracted_text
+        float ai_likelihood
+        text prediction
+        text full_response
+        datetime created_at
+    }
+
+    USER_DETECTIONS {
+        int id PK
+        int user_id FK
+        int original_detection_id FK
+        string document_category
+        string assignment_name
+        string subject
+        bool is_public
+    }
+
+    PLAGIARISM_CHECKS {
+        int id PK
+        int detection_id FK
+        int user_id FK
+        string filename
+        float similarity_percentage
+        float originality_percentage
+        string plagiarism_level
+        text matches_json
+        text similar_documents_json
+    }
+
+    PLAGIARISM_CORPUS {
+        int detection_id PK, FK
+        string filename
+        int text_length
+        bool is_active
+        datetime created_at
+    }
+
+    TEXT_FRAGMENTS {
+        int id PK
+        int detection_id FK
+        text fragment_text
+        int start_pos
+        int end_pos
+        string fragment_hash
+        text shingles_json
+        string simhash
+    }

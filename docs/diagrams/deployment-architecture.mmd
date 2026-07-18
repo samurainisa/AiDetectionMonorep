@@ -1,0 +1,21 @@
+flowchart LR
+    user["Пользователь / преподаватель"] --> browser["Браузер"]
+    browser --> frontend["Веб-интерфейс\nVue.js"]
+
+    frontend -->|"Загрузка текста или документа"| backend["Серверная часть\nFlask API"]
+
+    backend -->|"Временное сохранение документа"| files[("Папка с файлами")]
+    backend -->|"Извлечение текста из документа"| parser["Обработка файлов\nPDF / DOCX / TXT"]
+    parser --> analysis["Модуль анализа текста"]
+
+    backend -->|"Анализ введенного текста"| analysis
+
+    analysis -->|"Проверка на признаки ИИ"| bert["BERT / RuBERT-модель"]
+    analysis -->|"Внешняя проверка, если включена"| pangram[["Pangram API"]]
+    analysis -->|"Поиск совпадений"| plagiarism["Модуль антиплагиата"]
+
+    analysis -->|"Результат проверки\nи подозрительные фрагменты"| backend
+    backend -->|"Сохранение истории\nи отчетов"| db[("База данных\nPostgreSQL")]
+
+    backend -->|"Результат анализа"| frontend
+    frontend -->|"Результат, фрагменты,\nистория проверок"| browser

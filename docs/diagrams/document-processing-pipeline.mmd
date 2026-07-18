@@ -1,0 +1,24 @@
+flowchart LR
+    user["Пользователь"] --> upload["Загрузка текста\nили документа"]
+    upload --> backend["Серверная часть"]
+
+    backend --> file_check{"Что отправлено?"}
+    file_check -->|"Документ"| files["Временная папка\nс файлами"]
+    files --> extract["Извлечение текста\nиз PDF / DOCX / TXT"]
+    file_check -->|"Текст"| text_input["Готовый текст"]
+
+    extract --> preprocess["Предобработка текста"]
+    text_input --> preprocess
+
+    preprocess --> features["Расчет текстовых признаков"]
+    features --> ai_check["Проверка на признаки ИИ\nBERT / RuBERT"]
+    features --> cloud_check["Дополнительная внешняя проверка\nPangram API, если включена"]
+    features --> plagiarism["Проверка совпадений\nмодуль антиплагиата"]
+
+    ai_check --> merge["Объединение результатов"]
+    cloud_check --> merge
+    plagiarism --> merge
+
+    merge --> report["Отчет проверки\nоценка ИИ и фрагменты"]
+    report --> history["Сохранение истории\nв базе данных"]
+    history --> frontend["Показ результата\nв веб-интерфейсе"]
